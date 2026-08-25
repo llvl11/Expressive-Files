@@ -1,0 +1,7 @@
+{
+  "name": "Files",
+  "description": "Fast and smooth Material 3 Expressive Android file manager with Zip, 7z, Tar, Rar compression support, vibrant palette, cookie shapes, and dynamic theming.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
+
