@@ -1,3 +1,7 @@
+<p>
+  <img src="docs/icon.png" alt="Expressive Files app icon">
+</p>
+
 # Expressive Files
 
 A fast, expressive Material 3 file manager for Android with two distinct visual skins, a built-in archive engine, and a fluid physics-based UI. Built entirely with Kotlin and Jetpack Compose.
@@ -7,6 +11,14 @@ A fast, expressive Material 3 file manager for Android with two distinct visual 
   <img alt="Jetpack Compose" src="https://img.shields.io/badge/Jetpack%20Compose-Material%203-4285F4?logo=android&logoColor=white">
   <img alt="Min SDK" src="https://img.shields.io/badge/minSdk-35%20%28Android%2015%29-3DDC84">
   <img alt="Language" src="https://img.shields.io/badge/UI-English%20%7C%20Русский-blue">
+</p>
+
+## Screenshots
+
+<p>
+  <img src="docs/screenshots/home.png" alt="Home — file browsing">
+  <img src="docs/screenshots/storage.png" alt="Storage analysis">
+  <img src="docs/screenshots/settings.png" alt="Settings">
 </p>
 
 ## Features
@@ -111,10 +123,3 @@ The test suite runs on the JVM via Robolectric and covers:
 
 This project is licensed under the MIT License
 
-<!-- Optional: drop screenshots into /docs and uncomment
-<p align="center">
-  <img src="docs/screen-home.png" width="270">
-  <img src="docs/screen-storage.png" width="270">
-  <img src="docs/screen-archive.png" width="270">
-</p>
--->
