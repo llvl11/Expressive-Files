@@ -17,7 +17,7 @@ A fast, expressive Material 3 file manager for Android with two distinct visual 
 
 <p>
   <img src="docs/screenshots/home.png" alt="Home — file browsing">
-  <img src="docs/screenshots/storage.png" alt="Storage analysis">
+  <img src="docs/screenshots/storage.png?v=2" alt="Storage analysis">
   <img src="docs/screenshots/settings.png" alt="Settings">
 </p>
 
