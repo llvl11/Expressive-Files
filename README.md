@@ -109,7 +109,7 @@ The test suite runs on the JVM via Robolectric and covers:
 
 ## License
 
-No license has been published for this repository yet. If you plan to reuse the code, please open an issue to ask first — or better, suggest a license.
+This project is licensed under the MIT License
 
 <!-- Optional: drop screenshots into /docs and uncomment
 <p align="center">
