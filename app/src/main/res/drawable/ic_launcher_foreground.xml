@@ -1,8 +1,53 @@
 <?xml version="1.0" encoding="utf-8"?>
-<layer-list xmlns:android="http://schemas.android.com/apk/res/android">
-    <item
-        android:width="72dp"
-        android:height="72dp"
-        android:drawable="@drawable/ic_files_app_foreground_1787652354443"
-        android:gravity="center" />
-</layer-list>
+<!-- App icon: orange folder converted from the source SVG (512x512 design).
+     The gray gradient squircle of the SVG is provided by the adaptive icon's
+     background layer (ic_launcher_background); the SVG drop-shadow filters
+     have no VectorDrawable equivalent and are intentionally omitted. -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:aapt="http://schemas.android.com/aapt"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="512"
+    android:viewportHeight="512">
+
+    <!-- Folder scaled down slightly around its own center so it sits a bit
+         further inside the adaptive-icon safe zone. -->
+    <group
+        android:scaleX="0.85"
+        android:scaleY="0.85"
+        android:pivotX="256"
+        android:pivotY="262">
+
+        <!-- Folder back (with tab) -->
+        <path
+            android:pathData="M140,148 L206,148 Q218,148 226,157 L244,180 Q250,188 262,188 L372,188 Q396,188 396,212 L396,352 Q396,376 372,376 L140,376 Q116,376 116,352 L116,172 Q116,148 140,148 Z">
+            <aapt:attr name="android:fillColor">
+                <gradient
+                    android:startX="116"
+                    android:startY="148"
+                    android:endX="116"
+                    android:endY="376"
+                    android:type="linear">
+                    <item android:color="#FFFFB300" android:offset="0.0" />
+                    <item android:color="#FFFFA000" android:offset="1.0" />
+                </gradient>
+            </aapt:attr>
+        </path>
+
+        <!-- Folder front -->
+        <path
+            android:pathData="M140,232 L372,232 Q396,232 396,256 L396,352 Q396,376 372,376 L140,376 Q116,376 116,352 L116,256 Q116,232 140,232 Z">
+            <aapt:attr name="android:fillColor">
+                <gradient
+                    android:startX="116"
+                    android:startY="232"
+                    android:endX="116"
+                    android:endY="376"
+                    android:type="linear">
+                    <item android:color="#FFFFD54F" android:offset="0.0" />
+                    <item android:color="#FFFFB300" android:offset="1.0" />
+                </gradient>
+            </aapt:attr>
+        </path>
+    </group>
+</vector>

@@ -1,3 +1,241 @@
+<?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="app_name">Files</string>
+    <string name="app_name" translatable="false">Expressive Files</string>
+
+    <!-- == Top bar == -->
+    <string name="app_title">Files</string>
+    <string name="topbar_search">Поиск</string>
+    <string name="topbar_switch_view">Сменить вид</string>
+    <string name="topbar_sort">Сортировка</string>
+    <string name="topbar_settings">Настройки</string>
+    <string name="topbar_select_all">Выбрать все</string>
+    <string name="topbar_deselect_all">Снять всё выделение</string>
+    <string name="topbar_clear_search">Очистить поиск</string>
+    <string name="topbar_search_hint">Поиск файлов…</string>
+    <plurals name="topbar_selected_count">
+        <item quantity="one">Выбрано: %1$d</item>
+        <item quantity="few">Выбрано: %1$d</item>
+        <item quantity="many">Выбрано: %1$d</item>
+        <item quantity="other">Выбрано: %1$d</item>
+    </plurals>
+
+    <!-- == Predictive back / exit == -->
+    <string name="back_press_again_to_exit">Нажмите «Назад» ещё раз для выхода</string>
+
+    <!-- == Permission gate == -->
+    <string name="perm_all_files_access_title">Доступ ко всем файлам</string>
+    <string name="perm_all_files_access_body">Разрешите доступ к хранилищу, чтобы просматривать файлы и распаковывать архивы zip/7z/tar/rar.</string>
+    <string name="action_not_now">Не сейчас</string>
+    <string name="action_grant">Разрешить</string>
+
+    <!-- == FAB == -->
+    <string name="fab_add_actions">Добавить</string>
+    <string name="fab_close_actions">Свернуть меню</string>
+    <string name="fab_new_folder">Новая папка</string>
+    <string name="fab_new_file">Новый файл</string>
+
+    <!-- == Clipboard strip == -->
+    <string name="clipboard_copy_action">Копировать</string>
+    <string name="clipboard_move_action">Переместить</string>
+    <plurals name="clipboard_items_suffix">
+        <item quantity="one">%1$d элемент</item>
+        <item quantity="few">%1$d элемента</item>
+        <item quantity="many">%1$d элементов</item>
+        <item quantity="other">%1$d элемента</item>
+    </plurals>
+    <string name="clipboard_paste_hint">Вставить в текущую папку</string>
+    <string name="clipboard_paste">Вставить</string>
+    <string name="clipboard_clear">Очистить буфер</string>
+    <string name="strip_copy">Копировать</string>
+    <string name="strip_move">Переместить</string>
+    <string name="strip_compress">Сжать в архив</string>
+    <string name="strip_share">Поделиться</string>
+    <string name="strip_delete">Удалить</string>
+    <string name="strip_clear_selection">Снять выделение</string>
+
+    <!-- == Listing == -->
+    <string name="list_folder_empty">Папка пуста</string>
+    <string name="list_no_matches">Совпадений не найдено</string>
+    <string name="list_no_matches_hint">Попробуйте изменить поисковый запрос</string>
+    <string name="list_empty_hint">Нажмите «+», чтобы создать папку, файл или архив</string>
+    <plurals name="list_items_suffix">
+        <item quantity="one">%1$d элемент</item>
+        <item quantity="few">%1$d элемента</item>
+        <item quantity="many">%1$d элементов</item>
+        <item quantity="other">%1$d элемента</item>
+    </plurals>
+    <string name="list_empty_dir">Пусто</string>
+    <string name="list_size_unknown">—</string>
+    <string name="list_date_loading">Загрузка…</string>
+    <string name="badge_folder">ПАПКА</string>
+
+    <!-- == Breadcrumbs == -->
+    <string name="crumb_home">Главная</string>
+    <string name="crumb_root">Корень</string>
+    <string name="crumb_navigate_up">Вверх по дереву</string>
+
+    <!-- == Category filters & sort bar == -->
+    <string name="filter_all">Все</string>
+    <string name="filter_images">Изображения</string>
+    <string name="filter_videos">Видео</string>
+    <string name="filter_audio">Аудио</string>
+    <string name="filter_docs">Документы</string>
+    <string name="filter_archives">Архивы</string>
+    <string name="filter_code">Код</string>
+    <string name="filter_apk">APK</string>
+    <string name="sort_metric_name">Имя</string>
+    <string name="sort_metric_size">Размер</string>
+    <string name="sort_metric_date">Дата</string>
+    <string name="sort_order_ascending">По возрастанию</string>
+    <string name="sort_order_descending">По убыванию</string>
+
+    <!-- == Storage hero card == -->
+    <string name="hero_used_suffix">занято</string>
+    <string name="hero_remaining_of">%1$s свободно из %2$s</string>
+    <string name="hero_expand">Развернуть обзор памяти</string>
+    <string name="hero_collapse">Свернуть обзор памяти</string>
+
+    <!-- == Storage analysis screen == -->
+    <string name="analysis_title">Анализ памяти</string>
+    <string name="analysis_total_used_label">Использовано всего</string>
+    <string name="analysis_free_of_total">Свободно: %1$s из %2$s</string>
+    <string name="analysis_breakdown_title">Разбивка по категориям</string>
+    <string name="analysis_cat_archives">Архивы и резервные копии (7z, Tar, Zip, Rar)</string>
+    <string name="analysis_cat_images">Изображения и фото</string>
+    <string name="analysis_cat_videos">Видео и фильмы</string>
+    <string name="analysis_cat_documents">Документы и PDF</string>
+    <string name="analysis_cat_audio">Аудио и музыка</string>
+    <string name="analysis_cat_apks">Установленные приложения и APK</string>
+
+    <!-- == Category drill-down screen == -->
+    <string name="category_loading">Загрузка «%1$s»…</string>
+    <string name="category_none_found">«%1$s»: ничего не найдено</string>
+    <string name="category_none_found_hint">Попробуйте другую категорию или добавьте файлы на устройство</string>
+
+    <!-- == Settings screen == -->
+    <string name="settings_title">Настройки</string>
+    <string name="settings_section_appearance">Оформление и темы</string>
+    <string name="settings_language_title">Язык приложения</string>
+    <string name="settings_os_type_title">Тип ОС</string>
+    <string name="settings_theme_mode_title">Режим темы</string>
+    <string name="settings_theme_system">Системная</string>
+    <string name="settings_theme_light">Светлая</string>
+    <string name="settings_theme_dark">Тёмная</string>
+    <string name="settings_pitch_black_title">Глубокий чёрный (AMOLED)</string>
+    <string name="settings_pitch_black_subtitle">Истинно чёрный фон для тёмных режимов</string>
+    <string name="settings_color_palette_title">Цветовая палитра</string>
+    <string name="settings_section_files">Файлы и отображение</string>
+    <string name="settings_storage_overview_title">Обзор памяти на главном экране</string>
+    <string name="settings_storage_overview_subtitle">Карточка памяти и категории на главном экране</string>
+    <string name="settings_hidden_files_title">Скрытые файлы</string>
+    <string name="settings_hidden_files_subtitle">Показывать файлы и папки, начинающиеся с точки</string>
+    <string name="settings_view_mode_title">Вид списка по умолчанию</string>
+    <string name="settings_view_list">Список</string>
+    <string name="settings_view_grid">Сетка</string>
+    <string name="settings_view_cards">Карточки</string>
+    <string name="settings_section_archive">Архивы и сжатие</string>
+    <string name="settings_extract_subfolder_title">Распаковывать в подпапку</string>
+    <string name="settings_extract_subfolder_subtitle">Автоматически создавать папку с именем архива</string>
+    <string name="settings_default_format_title">Формат сжатия по умолчанию</string>
+
+    <!-- == New item / rename / delete dialogs == -->
+    <string name="new_folder_title">Новая папка</string>
+    <string name="new_file_title">Новый файл</string>
+    <string name="rename_title">Переименовать</string>
+    <string name="delete_confirm_title">Подтверждение удаления</string>
+    <string name="dialog_cancel">Отмена</string>
+    <string name="dialog_create">Создать</string>
+    <string name="dialog_delete">Удалить</string>
+    <string name="new_folder_placeholder">Имя папки</string>
+    <string name="new_file_placeholder">файл.txt</string>
+    <string name="rename_placeholder">Новое имя</string>
+    <string name="rename_error_empty">Введите имя</string>
+    <string name="rename_error_invalid">Имя содержит недопустимые символы</string>
+    <string name="rename_error_exists">Файл с таким именем уже существует</string>
+    <string name="dialog_rename">Переименовать</string>
+    <string name="delete_single_message">Удалить «%1$s»? Это действие нельзя отменить.</string>
+    <plurals name="delete_many_message">
+        <item quantity="one">Удалить выбранный элемент (%1$d)? Это действие нельзя отменить.</item>
+        <item quantity="few">Удалить выбранные элементы (%1$d)? Это действие нельзя отменить.</item>
+        <item quantity="many">Удалить выбранные элементы (%1$d)? Это действие нельзя отменить.</item>
+        <item quantity="other">Удалить выбранные элементы (%1$d)? Это действие нельзя отменить.</item>
+    </plurals>
+
+    <!-- == Create archive dialog == -->
+    <string name="archive_create_title">Создать архив</string>
+    <plurals name="archive_items_selected">
+        <item quantity="one">Выбран %1$d элемент</item>
+        <item quantity="few">Выбрано %1$d элемента</item>
+        <item quantity="many">Выбрано %1$d элементов</item>
+        <item quantity="other">Выбрано %1$d элемента</item>
+    </plurals>
+    <string name="archive_name_label">Имя архива</string>
+    <string name="archive_format_label">Формат сжатия</string>
+    <string name="archive_compress">Сжать</string>
+
+    <!-- == File action sheet == -->
+    <string name="sheet_open_folder">Открыть папку</string>
+    <string name="sheet_open_with_app">Открыть в приложении</string>
+    <string name="sheet_open_external">Открыть в другом приложении</string>
+    <string name="chooser_title">Выберите приложение</string>
+    <string name="sheet_extract_all">Распаковать всё</string>
+    <string name="sheet_inspect">Просмотреть</string>
+    <string name="sheet_copy">Копировать</string>
+    <string name="sheet_cut">Вырезать</string>
+    <string name="sheet_compress">Сжать</string>
+    <string name="sheet_rename">Переименовать</string>
+    <string name="sheet_share">Поделиться</string>
+    <string name="sheet_delete">Удалить</string>
+
+    <!-- == Archive viewer sheet == -->
+    <string name="viewer_filter_hint">Фильтр содержимого архива…</string>
+    <string name="viewer_reading_table">Чтение оглавления…</string>
+    <string name="viewer_entry_sizes">%1$s (%2$s в сжатом виде)</string>
+    <string name="viewer_archive_error">Не удалось прочитать архив</string>
+    <string name="viewer_archive_empty">Архив пуст или недоступен</string>
+    <string name="viewer_no_matches">Совпадений нет</string>
+    <string name="viewer_extract_all">Распаковать все файлы</string>
+    <string name="viewer_uncompressed_size">без сжатия: %1$s</string>
+    <plurals name="viewer_entries_count">
+        <item quantity="one">%1$d элемент</item>
+        <item quantity="few">%1$d элемента</item>
+        <item quantity="many">%1$d элементов</item>
+        <item quantity="other">%1$d элемента</item>
+    </plurals>
+
+    <!-- == Archive progress dialog == -->
+    <string name="progress_hide">Скрыть</string>
+    <string name="progress_show">Показать диалог</string>
+    <string name="progress_notifications_off">Уведомления отключены; скрытая задача выполняется без уведомления о прогрессе</string>
+    <string name="progress_cancel">Отмена</string>
+    <string name="progress_working">Работаем…</string>
+
+    <!-- == Archive operations (titles/notifications/toasts) == -->
+    <string name="op_creating">Создание %1$s</string>
+    <string name="op_extracting_name">Распаковка «%1$s»</string>
+    <string name="op_extracting_zip">Распаковка ZIP</string>
+    <string name="op_extracting_7z">Распаковка 7Z</string>
+    <string name="op_extracting_tar">Распаковка TAR</string>
+    <string name="op_extracting_rar">Распаковка RAR</string>
+    <string name="op_extracting_archive">Распаковка архива</string>
+    <string name="op_extraction_complete">Распаковка завершена</string>
+    <string name="op_compression_complete">Сжатие завершено</string>
+    <string name="op_extraction_failed">Ошибка распаковки</string>
+    <string name="op_compression_failed">Ошибка сжатия</string>
+    <string name="op_done">Готово</string>
+    <string name="toast_archive_created">Архив создан: %1$s</string>
+    <string name="toast_extraction_complete">Распаковка завершена</string>
+    <string name="toast_compress_cancelled">Сжатие отменено</string>
+    <string name="toast_extract_cancelled">Распаковка отменена</string>
+    <plurals name="toast_pasted_n">
+        <item quantity="one">Вставлено элементов: %1$d</item>
+        <item quantity="few">Вставлено элементов: %1$d</item>
+        <item quantity="many">Вставлено элементов: %1$d</item>
+        <item quantity="other">Вставлено элементов: %1$d</item>
+    </plurals>
+    <string name="toast_paste_failed">Не удалось вставить</string>
+
+    <!-- == APK install preflight == -->
+    <string name="apk_unknown_sources_toast">Разрешите установку из этого источника, затем нажмите APK ещё раз</string>
+    <string name="apk_no_handler_toast">Нет приложения для этого файла</string>
 </resources>

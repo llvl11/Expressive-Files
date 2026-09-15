@@ -1,8 +1,15 @@
 <?xml version="1.0" encoding="utf-8"?>
-<paths xmlns:android="http://schemas.android.com/apk/res/android">
+<paths xmlns:tools="http://schemas.android.com/tools">
     <external-path name="external_files" path="." />
     <external-files-path name="external_app_files" path="." />
     <files-path name="internal_files" path="." />
     <cache-path name="cache_files" path="." />
-    <root-path name="root" path="." />
+    <!-- Deliberate: this is a file manager that shares files from anywhere on
+         device (including removable storage), which the narrower scopes below
+         cannot cover. -->
+    <!--suppress AndroidElementNotAllowed -->
+    <root-path
+        name="root"
+        path="."
+        tools:ignore="InvalidFileProviderPath,AndroidElementNotAllowed" />
 </paths>

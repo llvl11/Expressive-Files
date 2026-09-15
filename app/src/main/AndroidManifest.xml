@@ -2,27 +2,47 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools">
 
-    <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" android:maxSdkVersion="32" />
-    <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" android:maxSdkVersion="29" tools:ignore="ScopedStorage" />
-    <uses-permission android:name="android.permission.MANAGE_EXTERNAL_STORAGE" tools:ignore="ScopedStorage" />
-    <uses-permission android:name="android.permission.READ_MEDIA_IMAGES" />
-    <uses-permission android:name="android.permission.READ_MEDIA_VIDEO" />
-    <uses-permission android:name="android.permission.READ_MEDIA_AUDIO" />
+    <!-- Core functionality: this is a file manager, so browsing, copying,
+         renaming, deleting, archiving and sharing files from all of shared and
+         removable storage is what the app is for - the "essential core
+         functionality" all-files access is reserved for, and the declaration
+         made in the Play Console for every release.
+         Only this permission is needed: READ_MEDIA_* (Play "Photos & Video"
+         policy) is redundant once all-files access is granted, and the app
+         never asks for it at runtime; REQUEST_INSTALL_PACKAGES (Play "Request
+         install packages" policy) is not needed either, since APKs are handed
+         to the system installer via an Intent rather than installed in-process;
+         and the legacy READ/WRITE_EXTERNAL_STORAGE grants were dropped because
+         minSdk is 35, where they no longer apply. -->
+    <uses-permission
+        android:name="android.permission.MANAGE_EXTERNAL_STORAGE"
+        tools:ignore="ScopedStorage" />
+
+    <!-- Needed to surface archive progress notifications (runtime request in
+         MainActivity). -->
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
 
     <application
+        android:name="com.baiel.expressivefiles.FilesApplication"
         android:allowBackup="true"
         android:dataExtractionRules="@xml/data_extraction_rules"
         android:fullBackupContent="@xml/backup_rules"
         android:icon="@mipmap/ic_launcher"
         android:label="@string/app_name"
+        android:localeConfig="@xml/locales_config"
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
-        android:requestLegacyExternalStorage="true"
+        android:enableOnBackInvokedCallback="true"
         android:theme="@style/Theme.MyApplication">
+
+        <!-- Allows CPU/native profiling of this non-debuggable release build
+             from Android Studio and Perfetto/simpleperf. -->
+        <profileable
+            android:shell="true"
+             />
         <activity
-            android:name=".MainActivity"
+            android:name="com.baiel.expressivefiles.MainActivity"
             android:exported="true"
-            android:label="@string/app_name"
             android:theme="@style/Theme.MyApplication"
             android:windowSoftInputMode="adjustResize">
             <intent-filter>
@@ -31,6 +51,13 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
+
+        <receiver
+
+            android:name=".ArchiveActionReceiver"
+
+            android:exported="false" />
+
 
         <provider
             android:name="androidx.core.content.FileProvider"
