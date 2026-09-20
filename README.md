@@ -4,7 +4,7 @@
 
 # Expressive Files
 
-A fast, expressive Material 3 file manager for Android with two distinct visual skins, a built-in archive engine, and a fluid physics-based UI. Built entirely with Kotlin and Jetpack Compose.
+A fast, expressive Material 3 file manager for Android with a built-in archive engine and a fluid physics-based UI. Built entirely with Kotlin and Jetpack Compose.
 
 <p>
   <img alt="Kotlin" src="https://img.shields.io/badge/Kotlin-2.4-7F52FF?logo=kotlin&logoColor=white">
@@ -45,7 +45,7 @@ A fast, expressive Material 3 file manager for Android with two distinct visual 
 Archive creation and extraction run with live progress reporting, powered by Apache Commons Compress, XZ for Java, and junrar.
 
 ### Expressive UI
-- **Two skins in one app**: stock-*Pixel* Material You styling or a *MagicOS*-inspired look (Honor-style buttons, sheets, and switches), switchable at runtime
+- **Expressive Material You styling**: stock-*Pixel* look with chunky "cookie" buttons, sheets, and switches
 - **Seven color palettes** including Dynamic Material You wallpaper theming, Neon Violet, Cyber Teal, Sunset Coral, Emerald Mint, and Citrus Gold
 - System / light / dark theme modes
 - Physics-based motion: elastic scroll-follow for floating strips and the FAB, springy enter transitions, and glassmorphism (real-time blur) chrome
@@ -75,7 +75,7 @@ app/src/main/java/com/baiel/expressivefiles/
 ├── ui/
 │   ├── components/  # File cards, dialogs, elastic scroll, squiggly indicators
 │   ├── screens/     # Home, settings, storage analysis (+ home/ chrome pieces)
-│   └── theme/       # Skins, palettes, shapes, typography
+│   └── theme/       # Palettes, shapes, typography
 ├── util/          # Coil helpers
 └── viewmodel/     # FileViewModel
 ```

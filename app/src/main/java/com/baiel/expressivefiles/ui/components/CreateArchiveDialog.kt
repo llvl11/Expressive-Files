@@ -16,6 +16,7 @@ import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.Archive
+import androidx.compose.material.icons.rounded.FolderZip
 import androidx.compose.material3.BasicAlertDialog
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
@@ -45,13 +46,10 @@ import androidx.compose.ui.unit.sp
 import com.baiel.expressivefiles.R
 import com.baiel.expressivefiles.model.ArchiveType
 import com.baiel.expressivefiles.model.FileItem
-import com.baiel.expressivefiles.model.OsType
 import com.baiel.expressivefiles.ui.theme.ArchiveZipColor
 import com.baiel.expressivefiles.ui.theme.ChunkyIconShape
 import com.baiel.expressivefiles.ui.theme.ChunkyTileShape
 import com.baiel.expressivefiles.ui.theme.ExpressiveRoundedShape
-import com.baiel.expressivefiles.ui.theme.LocalOsType
-import com.baiel.expressivefiles.ui.theme.OsIcons
 import com.baiel.expressivefiles.ui.theme.PillShape
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -113,7 +111,7 @@ fun CreateArchiveDialog(
                             shape = ChunkyIconShape
                         ) {
                             Icon(
-                                imageVector = OsIcons.archive(LocalOsType.current),
+                                imageVector = Icons.Rounded.FolderZip,
                                 contentDescription = null,
                                 tint = ArchiveZipColor,
                                 modifier = Modifier.size(24.dp)
@@ -154,68 +152,34 @@ fun CreateArchiveDialog(
 
                 Spacer(modifier = Modifier.height(6.dp))
 
-                if (LocalOsType.current == OsType.MAGIC_OS) {
-                    // MagicOS: borderless filled field.
-                    TextField(
-                        value = archiveName,
-                        onValueChange = { archiveName = it },
-                        singleLine = true,
-                        shape = ExpressiveRoundedShape,
-                        colors = TextFieldDefaults.colors(
-                            focusedContainerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
-                            unfocusedContainerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
-                            focusedIndicatorColor = Color.Transparent,
-                            unfocusedIndicatorColor = Color.Transparent
-                        ),
-                        trailingIcon = {
-                            Text(
-                                text = ".${selectedFormat.extension}",
-                                style = MaterialTheme.typography.bodyMedium,
-                                fontWeight = FontWeight.Bold,
-                                color = MaterialTheme.colorScheme.primary,
-                                modifier = Modifier.padding(end = 12.dp)
-                            )
-                        },
-                        modifier = Modifier.fillMaxWidth(),
-                        keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
-                        keyboardActions = KeyboardActions(
-                            onDone = {
-                                if (archiveName.isNotBlank()) {
-                                    buffered { onCompress(archiveName.trim(), selectedFormat) }
-                                }
-                            }
+                OutlinedTextField(
+                    value = archiveName,
+                    onValueChange = { archiveName = it },
+                    singleLine = true,
+                    shape = ExpressiveRoundedShape,
+                    colors = OutlinedTextFieldDefaults.colors(
+                        focusedBorderColor = MaterialTheme.colorScheme.primary,
+                        unfocusedBorderColor = MaterialTheme.colorScheme.outline.copy(alpha = 0.4f)
+                    ),
+                    trailingIcon = {
+                        Text(
+                            text = ".${selectedFormat.extension}",
+                            style = MaterialTheme.typography.bodyMedium,
+                            fontWeight = FontWeight.Bold,
+                            color = MaterialTheme.colorScheme.primary,
+                            modifier = Modifier.padding(end = 12.dp)
                         )
-                    )
-                } else {
-                    OutlinedTextField(
-                        value = archiveName,
-                        onValueChange = { archiveName = it },
-                        singleLine = true,
-                        shape = ExpressiveRoundedShape,
-                        colors = OutlinedTextFieldDefaults.colors(
-                            focusedBorderColor = MaterialTheme.colorScheme.primary,
-                            unfocusedBorderColor = MaterialTheme.colorScheme.outline.copy(alpha = 0.4f)
-                        ),
-                        trailingIcon = {
-                            Text(
-                                text = ".${selectedFormat.extension}",
-                                style = MaterialTheme.typography.bodyMedium,
-                                fontWeight = FontWeight.Bold,
-                                color = MaterialTheme.colorScheme.primary,
-                                modifier = Modifier.padding(end = 12.dp)
-                            )
-                        },
-                        modifier = Modifier.fillMaxWidth(),
-                        keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
-                        keyboardActions = KeyboardActions(
-                            onDone = {
-                                if (archiveName.isNotBlank()) {
-                                    buffered { onCompress(archiveName.trim(), selectedFormat) }
-                                }
+                    },
+                    modifier = Modifier.fillMaxWidth(),
+                    keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
+                    keyboardActions = KeyboardActions(
+                        onDone = {
+                            if (archiveName.isNotBlank()) {
+                                buffered { onCompress(archiveName.trim(), selectedFormat) }
                             }
-                        )
+                        }
                     )
-                }
+                )
 
                 Spacer(modifier = Modifier.height(20.dp))
 

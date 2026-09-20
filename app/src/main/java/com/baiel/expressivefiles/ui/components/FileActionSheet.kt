@@ -19,6 +19,7 @@ import androidx.compose.material.icons.rounded.ContentCopy
 import androidx.compose.material.icons.rounded.ContentCut
 import androidx.compose.material.icons.rounded.Delete
 import androidx.compose.material.icons.rounded.DriveFileRenameOutline
+import androidx.compose.material.icons.rounded.FolderZip
 import androidx.compose.material.icons.automirrored.rounded.OpenInNew
 import androidx.compose.material.icons.rounded.Share
 import androidx.compose.material.icons.rounded.Unarchive
@@ -47,8 +48,6 @@ import com.baiel.expressivefiles.model.FileType
 import com.baiel.expressivefiles.ui.theme.ChunkyIconShape
 import com.baiel.expressivefiles.ui.theme.ChunkySheetShape
 import com.baiel.expressivefiles.ui.theme.ChunkyTileShape
-import com.baiel.expressivefiles.ui.theme.LocalOsType
-import com.baiel.expressivefiles.ui.theme.OsIcons
 import com.baiel.expressivefiles.ui.theme.PillShape
 
 private data class ActionSpec(
@@ -76,7 +75,7 @@ fun FileActionSheet(
 ) {
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
     val themedFolderColor = MaterialTheme.colorScheme.primary
-    val (icon, color) = getFileIconAndColor(targetItem, themedFolderColor, LocalOsType.current)
+    val (icon, color) = getFileIconAndColor(targetItem, themedFolderColor)
     val isArchive = targetItem.fileType == FileType.ARCHIVE
 
 
@@ -104,7 +103,7 @@ fun FileActionSheet(
         }
         if (isArchive) {
             add(ActionSpec(Icons.Rounded.Unarchive, stringResource(R.string.sheet_extract_all), onExtract))
-            add(ActionSpec(OsIcons.archive(LocalOsType.current), stringResource(R.string.sheet_inspect), onInspectArchive))
+            add(ActionSpec(Icons.Rounded.FolderZip, stringResource(R.string.sheet_inspect), onInspectArchive))
         }
         add(ActionSpec(Icons.Rounded.ContentCopy, stringResource(R.string.sheet_copy), onCopy))
         add(ActionSpec(Icons.Rounded.ContentCut, stringResource(R.string.sheet_cut), onCut))

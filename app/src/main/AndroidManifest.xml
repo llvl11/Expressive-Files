@@ -9,14 +9,21 @@
          made in the Play Console for every release.
          Only this permission is needed: READ_MEDIA_* (Play "Photos & Video"
          policy) is redundant once all-files access is granted, and the app
-         never asks for it at runtime; REQUEST_INSTALL_PACKAGES (Play "Request
-         install packages" policy) is not needed either, since APKs are handed
-         to the system installer via an Intent rather than installed in-process;
-         and the legacy READ/WRITE_EXTERNAL_STORAGE grants were dropped because
-         minSdk is 35, where they no longer apply. -->
+         never asks for it at runtime; the legacy READ/WRITE_EXTERNAL_STORAGE
+         grants were dropped because minSdk is 35, where they no longer apply. -->
     <uses-permission
         android:name="android.permission.MANAGE_EXTERNAL_STORAGE"
         tools:ignore="ScopedStorage" />
+
+    <!-- REQUIRED, contrary to an earlier assumption in this file: Android 8+
+         refuses to surface the package installer unless the calling app
+         declares this permission - PackageManager.canRequestPackageInstalls()
+         always reports false without it, which routed every APK tap to the
+         unknown-sources settings screen and never showed the installer. It is
+         declared in the Play Console under "Request install packages" as the
+         file-manager use case (APKs are still handed to the SYSTEM installer
+         via an Intent; nothing is installed in-process). -->
+    <uses-permission android:name="android.permission.REQUEST_INSTALL_PACKAGES" />
 
     <!-- Needed to surface archive progress notifications (runtime request in
          MainActivity). -->

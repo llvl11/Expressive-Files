@@ -17,8 +17,8 @@ android {
     applicationId = "com.baiel.expressivefiles"
     minSdk = 35
     targetSdk = 37
-    versionCode = 12
-    versionName = "1.11"
+    versionCode = 15
+    versionName = "1.14"
 
     testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
   }

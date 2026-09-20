@@ -20,6 +20,7 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.rounded.Folder
 import androidx.compose.material.icons.rounded.Search
 import androidx.compose.material.icons.rounded.Unarchive
 import androidx.compose.material3.CircularProgressIndicator
@@ -29,8 +30,6 @@ import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextField
-import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -57,14 +56,12 @@ import com.baiel.expressivefiles.R
 import com.baiel.expressivefiles.archive.ArchiveEngine
 import com.baiel.expressivefiles.model.ArchiveEntryItem
 import com.baiel.expressivefiles.model.FileItem
-import com.baiel.expressivefiles.model.OsType
 import com.baiel.expressivefiles.model.determineFileType
+import com.baiel.expressivefiles.ui.components.fileTypeIcon
 import com.baiel.expressivefiles.ui.theme.ChunkyIconShape
 import com.baiel.expressivefiles.ui.theme.ChunkySheetShape
 import com.baiel.expressivefiles.ui.theme.ExpressiveRoundedShape
 import com.baiel.expressivefiles.ui.theme.FolderColor
-import com.baiel.expressivefiles.ui.theme.LocalOsType
-import com.baiel.expressivefiles.ui.theme.OsIcons
 import com.baiel.expressivefiles.ui.theme.PillShape
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
@@ -180,14 +177,14 @@ fun ArchiveViewerSheet(
                             modifier = Modifier.fillMaxWidth()
                         ) {
                             Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.weight(1f)) {
-                                val (_, color) = getFileIconAndColor(archiveItem, osType = LocalOsType.current)
+                                val (_, color) = getFileIconAndColor(archiveItem)
                                 CookieIconContainer(
                                     backgroundColor = color,
                                     size = 48.dp,
                                     shape = ChunkyIconShape
                                 ) {
                                     Icon(
-                                        imageVector = OsIcons.archive(LocalOsType.current),
+                                        imageVector = fileTypeIcon(archiveItem.fileType),
                                         contentDescription = null,
                                         tint = color,
                                         modifier = Modifier.size(26.dp)
@@ -221,52 +218,27 @@ fun ArchiveViewerSheet(
 
                         Spacer(modifier = Modifier.height(14.dp))
 
-                        if (LocalOsType.current == OsType.MAGIC_OS) {
-                            // MagicOS: borderless filled search field.
-                            TextField(
-                                value = searchQuery,
-                                onValueChange = { searchQuery = it },
-                                placeholder = { Text(stringResource(R.string.viewer_filter_hint)) },
-                                leadingIcon = {
-                                    Icon(
-                                        imageVector = Icons.Rounded.Search,
-                                        contentDescription = null,
-                                        tint = MaterialTheme.colorScheme.onSurfaceVariant
-                                    )
-                                },
-                                singleLine = true,
-                                shape = ExpressiveRoundedShape,
-                                colors = TextFieldDefaults.colors(
-                                    focusedContainerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.4f),
-                                    unfocusedContainerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.4f),
-                                    focusedIndicatorColor = Color.Transparent,
-                                    unfocusedIndicatorColor = Color.Transparent
-                                ),
-                                modifier = Modifier.fillMaxWidth()
-                            )
-                        } else {
-                            OutlinedTextField(
-                                value = searchQuery,
-                                onValueChange = { searchQuery = it },
-                                placeholder = { Text(stringResource(R.string.viewer_filter_hint)) },
-                                leadingIcon = {
-                                    Icon(
-                                        imageVector = Icons.Rounded.Search,
-                                        contentDescription = null,
-                                        tint = MaterialTheme.colorScheme.onSurfaceVariant
-                                    )
-                                },
-                                singleLine = true,
-                                shape = ExpressiveRoundedShape,
-                                colors = OutlinedTextFieldDefaults.colors(
-                                    focusedBorderColor = MaterialTheme.colorScheme.primary,
-                                    unfocusedBorderColor = MaterialTheme.colorScheme.outline.copy(alpha = 0.3f),
-                                    unfocusedContainerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.4f),
-                                    focusedContainerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.4f)
-                                ),
-                                modifier = Modifier.fillMaxWidth()
-                            )
-                        }
+                        OutlinedTextField(
+                            value = searchQuery,
+                            onValueChange = { searchQuery = it },
+                            placeholder = { Text(stringResource(R.string.viewer_filter_hint)) },
+                            leadingIcon = {
+                                Icon(
+                                    imageVector = Icons.Rounded.Search,
+                                    contentDescription = null,
+                                    tint = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                            },
+                            singleLine = true,
+                            shape = ExpressiveRoundedShape,
+                            colors = OutlinedTextFieldDefaults.colors(
+                                focusedBorderColor = MaterialTheme.colorScheme.primary,
+                                unfocusedBorderColor = MaterialTheme.colorScheme.outline.copy(alpha = 0.3f),
+                                unfocusedContainerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.4f),
+                                focusedContainerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.4f)
+                            ),
+                            modifier = Modifier.fillMaxWidth()
+                        )
                     }
 
                     Spacer(modifier = Modifier.height(12.dp))
@@ -330,14 +302,13 @@ fun ArchiveViewerSheet(
                                             verticalAlignment = Alignment.CenterVertically
                                         ) {
                                             Icon(
-                                                imageVector = if (entry.isDirectory) OsIcons.folder(LocalOsType.current)
-                                                else OsIcons.fileType(
+                                                imageVector = if (entry.isDirectory) Icons.Rounded.Folder
+                                                else fileTypeIcon(
                                                     determineFileType(
                                                         entry.name,
                                                         entry.name.substringAfterLast('.', ""),
                                                         false
-                                                    ),
-                                                    LocalOsType.current
+                                                    )
                                                 ),
                                                 contentDescription = null,
                                                 tint = if (entry.isDirectory) FolderColor else MaterialTheme.colorScheme.primary,

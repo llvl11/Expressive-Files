@@ -61,7 +61,6 @@ import com.baiel.expressivefiles.R
 import com.baiel.expressivefiles.model.AppColorPalette
 import com.baiel.expressivefiles.model.AppLanguage
 import com.baiel.expressivefiles.model.AppThemeMode
-import com.baiel.expressivefiles.model.OsType
 import com.baiel.expressivefiles.model.ViewMode
 import com.baiel.expressivefiles.ui.components.CREATABLE_ARCHIVE_FORMATS
 import com.baiel.expressivefiles.ui.components.ChunkyIconButton
@@ -70,7 +69,6 @@ import com.baiel.expressivefiles.ui.components.label
 import com.baiel.expressivefiles.viewmodel.FileViewModel
 import com.baiel.expressivefiles.ui.theme.ChunkyIconShape
 import com.baiel.expressivefiles.ui.theme.ChunkyTileShape
-import com.baiel.expressivefiles.ui.theme.LocalOsType
 import com.baiel.expressivefiles.ui.theme.PillShape
 import dev.chrisbanes.haze.HazeTint
 import dev.chrisbanes.haze.hazeEffect
@@ -85,7 +83,6 @@ fun SettingsScreen(
 ) {
     val settings by viewModel.settings.collectAsStateWithLifecycle()
     var palettesExpanded by remember { mutableStateOf(false) }
-    var osExpanded by remember { mutableStateOf(false) }
 
     // Glass top bar (Haze): the settings list records itself as the blur
     // source and the pinned bar replays it frosted while scrolling. Lighter
@@ -139,149 +136,7 @@ fun SettingsScreen(
             // Appearance & Theming Section
             SettingsSectionHeader(title = stringResource(R.string.settings_section_appearance), icon = Icons.Rounded.ColorLens)
 
-            SettingsTile {
-                val context = LocalContext.current
-                Text(
-                    text = stringResource(R.string.settings_language_title),
-                    style = MaterialTheme.typography.titleMedium,
-                    fontWeight = FontWeight.Bold,
-                    color = MaterialTheme.colorScheme.onSurface
-                )
-                Spacer(modifier = Modifier.height(12.dp))
-
-                // Applies immediately: the tag is persisted, then the activity
-                // recreates so every resource re-resolves under the new locale.
-                SegmentedRow(
-                    options = AppLanguage.entries.toList(),
-                    label = { it.title },
-                    isSelected = { settings.appLanguage == it },
-                    onSelect = { language ->
-                        if (settings.appLanguage != language) {
-                            viewModel.updateAppLanguage(language.tag)
-                            (context as? Activity)?.recreate()
-                        }
-                    },
-                    height = 40.dp
-                )
-
-                HorizontalDivider(
-                    modifier = Modifier.padding(vertical = 12.dp),
-                    color = MaterialTheme.colorScheme.outline.copy(alpha = 0.1f)
-                )
-
-                Text(
-                    text = stringResource(R.string.settings_theme_mode_title),
-                    style = MaterialTheme.typography.titleMedium,
-                    fontWeight = FontWeight.Bold,
-                    color = MaterialTheme.colorScheme.onSurface
-                )
-                Spacer(modifier = Modifier.height(12.dp))
-
-                val systemLabel = stringResource(R.string.settings_theme_system)
-                val lightLabel = stringResource(R.string.settings_theme_light)
-                val darkLabel = stringResource(R.string.settings_theme_dark)
-                SegmentedRow(
-                    options = AppThemeMode.entries.toList(),
-                    label = {
-                        when (it) {
-                            AppThemeMode.SYSTEM -> systemLabel
-                            AppThemeMode.LIGHT -> lightLabel
-                            AppThemeMode.DARK -> darkLabel
-                        }
-                    },
-                    isSelected = { settings.themeMode == it },
-                    onSelect = { viewModel.updateThemeMode(it) }
-                )
-
-                if (settings.themeMode != AppThemeMode.LIGHT) {
-                    HorizontalDivider(
-                        modifier = Modifier.padding(vertical = 12.dp),
-                        color = MaterialTheme.colorScheme.outline.copy(alpha = 0.1f)
-                    )
-                    ToggleRow(
-                        title = stringResource(R.string.settings_pitch_black_title),
-                        subtitle = stringResource(R.string.settings_pitch_black_subtitle),
-                        checked = settings.pitchBlack,
-                        onCheckedChange = { viewModel.updatePitchBlack(it) }
-                    )
-                }
-            }
-
-            // OS skin: switches the color scheme flavor and the icon set.
-            SettingsTile {
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        // Rounded ripple to match the tile's corners.
-                        .clip(ChunkyTileShape)
-                        .clickable { osExpanded = !osExpanded },
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.SpaceBetween
-                ) {
-                    Text(
-                        text = stringResource(R.string.settings_os_type_title),
-                        style = MaterialTheme.typography.titleMedium,
-                        fontWeight = FontWeight.Bold,
-                        color = MaterialTheme.colorScheme.onSurface
-                    )
-                    Icon(
-                        imageVector = if (osExpanded) Icons.Rounded.ExpandLess else Icons.Rounded.ExpandMore,
-                        contentDescription = null,
-                        tint = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                }
-
-                AnimatedVisibility(
-                    visible = osExpanded,
-                    enter = expandVertically(),
-                    exit = shrinkVertically()
-                ) {
-                    Column(
-                        verticalArrangement = Arrangement.spacedBy(8.dp),
-                        modifier = Modifier.padding(top = 12.dp)
-                    ) {
-                        OsType.entries.forEach { type ->
-                            val isSelected = settings.osType == type
-                            Surface(
-                                color = if (isSelected) MaterialTheme.colorScheme.primaryContainer
-                                        else MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
-                                // Plain rounded row, not a cookie shape.
-                                shape = ChunkyTileShape,
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .clip(ChunkyTileShape)
-                                    .clickable { viewModel.updateOsType(type) }
-                            ) {
-                                Row(
-                                    modifier = Modifier
-                                        .fillMaxWidth()
-                                        .padding(horizontal = 14.dp, vertical = 10.dp),
-                                    verticalAlignment = Alignment.CenterVertically,
-                                    horizontalArrangement = Arrangement.SpaceBetween
-                                ) {
-                                    Text(
-                                        text = type.title,
-                                        style = MaterialTheme.typography.bodyMedium,
-                                        fontWeight = if (isSelected) FontWeight.Black else FontWeight.Medium,
-                                        color = if (isSelected) MaterialTheme.colorScheme.onPrimaryContainer
-                                                else MaterialTheme.colorScheme.onSurface
-                                    )
-                                    if (isSelected) {
-                                        Icon(
-                                            imageVector = Icons.Rounded.Check,
-                                            contentDescription = null,
-                                            tint = MaterialTheme.colorScheme.primary,
-                                            modifier = Modifier.size(20.dp)
-                                        )
-                                    }
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-
-            // Accent Color Palette
+            // Accent Color Palette (first option)
             SettingsTile {
                 Row(
                     modifier = Modifier
@@ -352,6 +207,74 @@ fun SettingsScreen(
                             }
                         }
                     }
+                }
+            }
+
+            SettingsTile {
+                val context = LocalContext.current
+                Text(
+                    text = stringResource(R.string.settings_language_title),
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.Bold,
+                    color = MaterialTheme.colorScheme.onSurface
+                )
+                Spacer(modifier = Modifier.height(12.dp))
+
+                // Applies immediately: the tag is persisted, then the activity
+                // recreates so every resource re-resolves under the new locale.
+                SegmentedRow(
+                    options = AppLanguage.entries.toList(),
+                    label = { it.title },
+                    isSelected = { settings.appLanguage == it },
+                    onSelect = { language ->
+                        if (settings.appLanguage != language) {
+                            viewModel.updateAppLanguage(language.tag)
+                            (context as? Activity)?.recreate()
+                        }
+                    },
+                    height = 40.dp
+                )
+
+                HorizontalDivider(
+                    modifier = Modifier.padding(vertical = 12.dp),
+                    color = MaterialTheme.colorScheme.outline.copy(alpha = 0.1f)
+                )
+
+                Text(
+                    text = stringResource(R.string.settings_theme_mode_title),
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.Bold,
+                    color = MaterialTheme.colorScheme.onSurface
+                )
+                Spacer(modifier = Modifier.height(12.dp))
+
+                val systemLabel = stringResource(R.string.settings_theme_system)
+                val lightLabel = stringResource(R.string.settings_theme_light)
+                val darkLabel = stringResource(R.string.settings_theme_dark)
+                SegmentedRow(
+                    options = AppThemeMode.entries.toList(),
+                    label = {
+                        when (it) {
+                            AppThemeMode.SYSTEM -> systemLabel
+                            AppThemeMode.LIGHT -> lightLabel
+                            AppThemeMode.DARK -> darkLabel
+                        }
+                    },
+                    isSelected = { settings.themeMode == it },
+                    onSelect = { viewModel.updateThemeMode(it) }
+                )
+
+                if (settings.themeMode != AppThemeMode.LIGHT) {
+                    HorizontalDivider(
+                        modifier = Modifier.padding(vertical = 12.dp),
+                        color = MaterialTheme.colorScheme.outline.copy(alpha = 0.1f)
+                    )
+                    ToggleRow(
+                        title = stringResource(R.string.settings_pitch_black_title),
+                        subtitle = stringResource(R.string.settings_pitch_black_subtitle),
+                        checked = settings.pitchBlack,
+                        onCheckedChange = { viewModel.updatePitchBlack(it) }
+                    )
                 }
             }
 
@@ -452,17 +375,9 @@ fun SettingsScreen(
 /** Rounded card container shared by every settings group. */
 @Composable
 private fun SettingsTile(content: @Composable () -> Unit) {
-    val magic = LocalOsType.current == OsType.MAGIC_OS
-    val isDark = MaterialTheme.colorScheme.background.luminance() < 0.5f
     Surface(
         shape = ChunkyTileShape,
-        color = when {
-            // MagicOS: white (light) / raised dark (dark) borderless cards on
-            // a gray/black page; Pixel keeps the tonal translucent tile.
-            magic && isDark -> MaterialTheme.colorScheme.surfaceContainerHigh
-            magic -> MaterialTheme.colorScheme.surface
-            else -> MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.4f)
-        },
+        color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.4f),
         modifier = Modifier.fillMaxWidth()
     ) {
         Column(modifier = Modifier.padding(16.dp)) {
@@ -501,25 +416,10 @@ private fun ToggleRow(
         Switch(
             checked = checked,
             onCheckedChange = onCheckedChange,
-            colors = if (LocalOsType.current == OsType.MAGIC_OS) {
-                // MagicOS switch: solid blue track with a white thumb when on,
-                // plain gray track with white thumb (no border) when off.
-                SwitchDefaults.colors(
-                    checkedThumbColor = Color.White,
-                    checkedTrackColor = MaterialTheme.colorScheme.primary,
-                    checkedBorderColor = Color.Transparent,
-                    checkedIconColor = MaterialTheme.colorScheme.primary,
-                    uncheckedThumbColor = Color.White,
-                    uncheckedTrackColor = MaterialTheme.colorScheme.surfaceVariant,
-                    uncheckedBorderColor = Color.Transparent,
-                    uncheckedIconColor = MaterialTheme.colorScheme.onSurfaceVariant
-                )
-            } else {
-                SwitchDefaults.colors(
-                    checkedThumbColor = MaterialTheme.colorScheme.primary,
-                    checkedTrackColor = MaterialTheme.colorScheme.primaryContainer
-                )
-            }
+            colors = SwitchDefaults.colors(
+                checkedThumbColor = MaterialTheme.colorScheme.primary,
+                checkedTrackColor = MaterialTheme.colorScheme.primaryContainer
+            )
         )
     }
 }

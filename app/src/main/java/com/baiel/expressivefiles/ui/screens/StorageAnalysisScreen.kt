@@ -50,8 +50,7 @@ import com.baiel.expressivefiles.ui.theme.ChunkyIconShape
 import com.baiel.expressivefiles.ui.theme.ChunkyTileShape
 import com.baiel.expressivefiles.ui.theme.DocumentColor
 import com.baiel.expressivefiles.ui.theme.ImageColor
-import com.baiel.expressivefiles.ui.theme.LocalOsType
-import com.baiel.expressivefiles.ui.theme.OsIcons
+import com.baiel.expressivefiles.ui.components.fileTypeIcon
 import com.baiel.expressivefiles.ui.theme.VideoColor
 import com.baiel.expressivefiles.viewmodel.FileViewModel
 
@@ -65,12 +64,12 @@ private data class StorageCategorySpec(
 
 @Composable
 private fun storageCategories(): List<StorageCategorySpec> = listOf(
-    StorageCategorySpec(stringResource(R.string.analysis_cat_archives), { it.archivesBytes }, OsIcons.fileType(FileType.ARCHIVE, LocalOsType.current), ArchiveZipColor, FileType.ARCHIVE),
-    StorageCategorySpec(stringResource(R.string.analysis_cat_images), { it.imagesBytes }, OsIcons.fileType(FileType.IMAGE, LocalOsType.current), ImageColor, FileType.IMAGE),
-    StorageCategorySpec(stringResource(R.string.analysis_cat_videos), { it.videosBytes }, OsIcons.fileType(FileType.VIDEO, LocalOsType.current), VideoColor, FileType.VIDEO),
-    StorageCategorySpec(stringResource(R.string.analysis_cat_documents), { it.documentsBytes }, OsIcons.fileType(FileType.DOCUMENT, LocalOsType.current), DocumentColor, FileType.DOCUMENT),
-    StorageCategorySpec(stringResource(R.string.analysis_cat_audio), { it.audioBytes }, OsIcons.fileType(FileType.AUDIO, LocalOsType.current), AudioColor, FileType.AUDIO),
-    StorageCategorySpec(stringResource(R.string.analysis_cat_apks), { it.apkBytes }, OsIcons.fileType(FileType.APK, LocalOsType.current), ApkColor, FileType.APK)
+    StorageCategorySpec(stringResource(R.string.analysis_cat_archives), { it.archivesBytes }, fileTypeIcon(FileType.ARCHIVE), ArchiveZipColor, FileType.ARCHIVE),
+    StorageCategorySpec(stringResource(R.string.analysis_cat_images), { it.imagesBytes }, fileTypeIcon(FileType.IMAGE), ImageColor, FileType.IMAGE),
+    StorageCategorySpec(stringResource(R.string.analysis_cat_videos), { it.videosBytes }, fileTypeIcon(FileType.VIDEO), VideoColor, FileType.VIDEO),
+    StorageCategorySpec(stringResource(R.string.analysis_cat_documents), { it.documentsBytes }, fileTypeIcon(FileType.DOCUMENT), DocumentColor, FileType.DOCUMENT),
+    StorageCategorySpec(stringResource(R.string.analysis_cat_audio), { it.audioBytes }, fileTypeIcon(FileType.AUDIO), AudioColor, FileType.AUDIO),
+    StorageCategorySpec(stringResource(R.string.analysis_cat_apks), { it.apkBytes }, fileTypeIcon(FileType.APK), ApkColor, FileType.APK)
 )
 
 @OptIn(ExperimentalMaterial3Api::class)

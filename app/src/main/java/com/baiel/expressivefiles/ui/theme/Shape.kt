@@ -1,6 +1,5 @@
 package com.baiel.expressivefiles.ui.theme
 
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Shapes
 import androidx.compose.runtime.Composable
@@ -13,14 +12,11 @@ import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import kotlin.math.cos
 import kotlin.math.sin
-import com.baiel.expressivefiles.model.OsType
 
 /**
- * Geometry per OS skin. The getters are @Composable so existing call sites
- * keep compiling unchanged while the shapes swap with the selected OS type:
- *  - Pixel: stock M3 Expressive "cookie" geometry.
- *  - MagicOS: capsules everywhere, rounder cards/sheets/dialogs, tighter
- *    small elements, borderless flat surfaces.
+ * App geometry. The getters are @Composable so existing call sites keep
+ * compiling unchanged; the shapes are the stock M3 Expressive "cookie"
+ * geometry.
  */
 private val PixelCookieShapes = Shapes(
     extraSmall = RoundedCornerShape(10.dp),
@@ -34,19 +30,7 @@ private val PixelIconShape: Shape get() = ExpressiveCookieShape
 private val PixelSheetShape: Shape =
     RoundedCornerShape(topStart = 36.dp, topEnd = 36.dp, bottomStart = 0.dp, bottomEnd = 0.dp)
 
-private val MagicOsCookieShapes = Shapes(
-    extraSmall = RoundedCornerShape(8.dp),
-    small = RoundedCornerShape(14.dp),
-    medium = RoundedCornerShape(24.dp),
-    large = RoundedCornerShape(30.dp),
-    extraLarge = RoundedCornerShape(36.dp)
-)
-private val MagicOsTileShape: Shape = RoundedCornerShape(30.dp)
-private val MagicOsIconShape: Shape = RoundedCornerShape(16.dp)
-private val MagicOsSheetShape: Shape =
-    RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp, bottomStart = 0.dp, bottomEnd = 0.dp)
-
-/** Capsule - identical in both skins (MagicOS uses it for every button). */
+/** Capsule: the shared button shape. */
 val PillShape: Shape = RoundedCornerShape(100.dp)
 
 val ExpressiveRoundedShape: Shape = RoundedCornerShape(16.dp)
@@ -79,39 +63,22 @@ val ExpressiveCookieShape: Shape = object : Shape {
 }
 
 val CookieShapes: Shapes
-    @Composable get() = when (LocalOsType.current) {
-        OsType.MAGIC_OS -> MagicOsCookieShapes
-        else -> PixelCookieShapes
-    }
+    @Composable get() = PixelCookieShapes
 
 val ChunkyTileShape: Shape
-    @Composable get() = when (LocalOsType.current) {
-        OsType.MAGIC_OS -> MagicOsTileShape
-        else -> PixelTileShape
-    }
+    @Composable get() = PixelTileShape
 
 val ChunkyIconShape: Shape
-    @Composable get() = when (LocalOsType.current) {
-        OsType.MAGIC_OS -> MagicOsIconShape
-        else -> PixelIconShape
-    }
+    @Composable get() = PixelIconShape
 
 val ChunkySheetShape: Shape
-    @Composable get() = when (LocalOsType.current) {
-        OsType.MAGIC_OS -> MagicOsSheetShape
-        else -> PixelSheetShape
-    }
+    @Composable get() = PixelSheetShape
 
-/** MagicOS icon buttons stay circular; Pixel can use a shape suited to the action. */
+/** Icon buttons use a shape suited to the action (circle by default via caller). */
 @Composable
-fun osIconButtonShape(pixelShape: Shape = ExpressiveCookieShape): Shape =
-    if (LocalOsType.current == OsType.MAGIC_OS) CircleShape else pixelShape
+fun osIconButtonShape(pixelShape: Shape = ExpressiveCookieShape): Shape = pixelShape
 
-/** File list/grid/expressive cards: slightly rounder in MagicOS. */
+/** File list/grid/expressive cards: the Pixel roundness. */
 @Composable
 fun osCardShape(expressive: Boolean = false): Shape =
-    if (LocalOsType.current == OsType.MAGIC_OS) {
-        RoundedCornerShape(if (expressive) 30.dp else 28.dp)
-    } else {
-        RoundedCornerShape(if (expressive) 26.dp else 24.dp)
-    }
+    RoundedCornerShape(if (expressive) 26.dp else 24.dp)

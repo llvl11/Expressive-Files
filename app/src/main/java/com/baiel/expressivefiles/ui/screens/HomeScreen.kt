@@ -35,6 +35,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.NoteAdd
 import androidx.compose.material.icons.rounded.Add
 import androidx.compose.material.icons.rounded.CreateNewFolder
+import androidx.compose.material.icons.rounded.FolderZip
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.FloatingActionButtonDefaults
 import androidx.compose.material3.Icon
@@ -87,8 +88,7 @@ import com.baiel.expressivefiles.ui.screens.home.HomeBottomActionStrip
 import com.baiel.expressivefiles.ui.screens.home.HomeTopBar
 import com.baiel.expressivefiles.ui.theme.ChunkyIconShape
 import com.baiel.expressivefiles.ui.theme.ChunkyTileShape
-import com.baiel.expressivefiles.ui.theme.LocalOsType
-import com.baiel.expressivefiles.ui.theme.OsIcons
+import com.baiel.expressivefiles.ui.components.fileTypeIcon
 import com.baiel.expressivefiles.ui.theme.osIconButtonShape
 import com.baiel.expressivefiles.viewmodel.FileViewModel
 import dev.chrisbanes.haze.ExperimentalHazeApi
@@ -472,7 +472,7 @@ private fun PermissionGate(
                             shape = ChunkyIconShape
                         ) {
                             Icon(
-                                imageVector = OsIcons.archive(LocalOsType.current),
+                                imageVector = Icons.Rounded.FolderZip,
                                 contentDescription = null,
                                 tint = MaterialTheme.colorScheme.onError,
                                 modifier = Modifier.size(24.dp)

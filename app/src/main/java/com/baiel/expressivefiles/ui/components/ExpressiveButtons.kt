@@ -46,9 +46,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.baiel.expressivefiles.model.OsType
 import com.baiel.expressivefiles.ui.theme.ChunkyTileShape
-import com.baiel.expressivefiles.ui.theme.LocalOsType
 import com.baiel.expressivefiles.ui.theme.PillShape
 import com.baiel.expressivefiles.ui.theme.osIconButtonShape
 import kotlinx.coroutines.launch
@@ -99,11 +97,9 @@ fun ChunkyButton(
     enabled: Boolean = true
 ) {
     val (tapModifier, scale) = rememberPressScale(enabled, onClick)
-    // MagicOS: capsule buttons, semibold type, slightly shorter; Pixel keeps
-    // the chunky rounded-rectangle with ExtraBold type.
-    val magic = LocalOsType.current == OsType.MAGIC_OS
-    val resolvedShape = shape ?: if (magic) PillShape else ChunkyTileShape
-    val resolvedHeight = if (height.value.isNaN()) (if (magic) 48.dp else 58.dp) else height.coerceAtLeast(48.dp)
+    // Chunky rounded-rectangle with ExtraBold type.
+    val resolvedShape = shape ?: ChunkyTileShape
+    val resolvedHeight = if (height.value.isNaN()) 58.dp else height.coerceAtLeast(48.dp)
 
     Box(
         modifier = modifier
@@ -115,7 +111,7 @@ fun ChunkyButton(
             .clip(resolvedShape)
             .background(if (enabled) backgroundColor else backgroundColor.copy(alpha = 0.4f))
             .then(tapModifier)
-            .padding(horizontal = if (magic) 24.dp else 20.dp, vertical = 12.dp),
+            .padding(horizontal = 20.dp, vertical = 12.dp),
         contentAlignment = Alignment.Center
     ) {
         Row(
@@ -134,9 +130,9 @@ fun ChunkyButton(
             Text(
                 text = text,
                 color = contentColor,
-                fontWeight = if (magic) FontWeight.SemiBold else FontWeight.ExtraBold,
+                fontWeight = FontWeight.ExtraBold,
                 fontSize = 15.sp,
-                letterSpacing = if (magic) 0.sp else 0.2.sp
+                letterSpacing = 0.2.sp
             )
         }
     }
@@ -178,7 +174,6 @@ fun ChunkyIconButton(
     val isPressed by interactionSource.collectIsPressedAsState()
     val currentOnClick by rememberUpdatedState(onClick)
     val view = LocalView.current
-    // MagicOS icon buttons are perfect circles; Pixel keeps rounded squares.
     val resolvedShape = shape ?: osIconButtonShape()
     val scale by animateFloatAsState(
         targetValue = if (isPressed && enabled) 0.90f else 1f,
@@ -233,7 +228,7 @@ fun ChunkyChip(
     // One-shot bounce fired on every tap so filter clicks feel tactile even
     // when the selection state does not change (e.g. re-tapping the same chip).
     val chipPulse = remember { Animatable(1f) }
-    // MagicOS filter chips run a touch shorter than the Pixel ones.
+    // Filter chips keep one fixed height.
     val chipHeight = 48.dp
 
     // Elastic physics: press dips with a bouncy spring, selection pops with a

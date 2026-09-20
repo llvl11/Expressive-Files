@@ -8,6 +8,8 @@ import com.baiel.expressivefiles.ArchiveActionReceiver
 import com.baiel.expressivefiles.R
 import com.baiel.expressivefiles.archive.ArchiveEngine
 import com.baiel.expressivefiles.data.FileManagerRepository
+import com.baiel.expressivefiles.data.InvalidNameException
+import com.baiel.expressivefiles.data.NameConflictException
 import com.baiel.expressivefiles.data.SettingsRepository
 import com.baiel.expressivefiles.model.ArchiveProgress
 import com.baiel.expressivefiles.model.ArchiveType
@@ -18,7 +20,6 @@ import com.baiel.expressivefiles.model.ClipboardAction
 import com.baiel.expressivefiles.model.ClipboardState
 import com.baiel.expressivefiles.model.FileItem
 import com.baiel.expressivefiles.model.FileType
-import com.baiel.expressivefiles.model.OsType
 import com.baiel.expressivefiles.model.SortMode
 import com.baiel.expressivefiles.model.SortOrder
 import com.baiel.expressivefiles.model.StorageStats
@@ -37,6 +38,13 @@ import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import java.io.File
 import kotlin.time.Duration.Companion.milliseconds
+
+/**
+ * Reason a create/rename name was rejected, resolved to a localized message by
+ * the dialog. EMPTY is checked before dispatch; the rest map the repository's
+ * typed failures.
+ */
+enum class NameError { EMPTY, INVALID, EXISTS, FAILED }
 
 /**
  * Single source of truth for every piece of app state that survives screen
@@ -175,8 +183,25 @@ class FileViewModel(application: Application) : AndroidViewModel(application) {
     private val _renameTargetItem = MutableStateFlow<FileItem?>(null)
     val renameTargetItem: StateFlow<FileItem?> = _renameTargetItem.asStateFlow()
 
+    /**
+     * Lowercased names of the rename target's directory siblings (the target
+     * itself excluded), snapshotted once when the dialog opens. Powers the
+     * dialog's live conflict detection; empty until the background listing
+     * lands, in which case the repository's own check still guards the confirm.
+     */
+    private val _renameSiblingNames = MutableStateFlow<Set<String>>(emptySet())
+    val renameSiblingNames: StateFlow<Set<String>> = _renameSiblingNames.asStateFlow()
+
     private val _pendingDeleteItems = MutableStateFlow<List<FileItem>>(emptyList())
     val pendingDeleteItems: StateFlow<List<FileItem>> = _pendingDeleteItems.asStateFlow()
+
+    /**
+     * Why the last create/rename attempt was rejected (null = clean). The
+     * dialog keeps its text, shows the matching message and stays open, so a
+     * rejected name is never a silent no-op.
+     */
+    private val _nameError = MutableStateFlow<NameError?>(null)
+    val nameError: StateFlow<NameError?> = _nameError.asStateFlow()
 
     // ----- Archive progress -------------------------------------------------
     private val _archiveProgress = MutableStateFlow<ArchiveProgress?>(null)
@@ -563,26 +588,69 @@ class FileViewModel(application: Application) : AndroidViewModel(application) {
     // ======================================================================
 
     fun createFolder(name: String) {
+        if (name.isBlank()) {
+            _nameError.value = NameError.EMPTY
+            return
+        }
         viewModelScope.launch {
             repository.createDirectory(_currentDirectory.value, name)
-            loadCurrentDirectory()
-            loadStorageStats()
+                .onSuccess {
+                    _nameError.value = null
+                    _showNewItemDialog.value = null
+                    loadCurrentDirectory()
+                    loadStorageStats()
+                }
+                .onFailure { _nameError.value = it.toNameError() }
         }
     }
 
     fun createNewFile(name: String) {
+        if (name.isBlank()) {
+            _nameError.value = NameError.EMPTY
+            return
+        }
         viewModelScope.launch {
             repository.createNewFile(_currentDirectory.value, name)
-            loadCurrentDirectory()
-            loadStorageStats()
+                .onSuccess {
+                    _nameError.value = null
+                    _showNewItemDialog.value = null
+                    loadCurrentDirectory()
+                    loadStorageStats()
+                }
+                .onFailure { _nameError.value = it.toNameError() }
         }
     }
 
+    /**
+     * Renames [item] to [newName]. On success the dialog closes and the
+     * listing reloads; on rejection it stays open with the reason visible
+     * (see [nameError]) so the user can correct the name in place.
+     */
     fun renameFile(item: FileItem, newName: String) {
+        if (newName.isBlank()) {
+            _nameError.value = NameError.EMPTY
+            return
+        }
         viewModelScope.launch {
             repository.rename(item.file, newName)
-            loadCurrentDirectory()
+                .onSuccess {
+                    _nameError.value = null
+                    _renameTargetItem.value = null
+                    loadCurrentDirectory()
+                }
+                .onFailure { _nameError.value = it.toNameError() }
         }
+    }
+
+    /** Clears the dialog's name error (called on edit and when it reopens). */
+    fun clearNameError() {
+        _nameError.value = null
+    }
+
+    private fun Throwable.toNameError(): NameError = when (this) {
+        is InvalidNameException -> NameError.INVALID
+        is NameConflictException -> NameError.EXISTS
+        else -> NameError.FAILED
     }
 
     fun deleteSelectedFiles() {
@@ -668,11 +736,26 @@ class FileViewModel(application: Application) : AndroidViewModel(application) {
     }
 
     fun startRename(item: FileItem) {
+        _nameError.value = null
         _renameTargetItem.value = item
+        // Snapshot the parent's entries once (hidden included, lowercased,
+        // target excluded) so the dialog can flag conflicts live. The target
+        // is matched by EXACT name, not case-insensitively: on case-sensitive
+        // filesystems a sibling that only differs in case from the target is
+        // still a real conflict for a case-insensitive rename.
+        _renameSiblingNames.value = emptySet()
+        viewModelScope.launch {
+            val parent = item.file.parentFile ?: return@launch
+            _renameSiblingNames.value = repository.siblingNamesIn(parent)
+                .filter { it != item.name }
+                .mapTo(HashSet()) { it.lowercase() }
+        }
     }
 
     fun closeRename() {
+        _nameError.value = null
         _renameTargetItem.value = null
+        _renameSiblingNames.value = emptySet()
     }
 
     fun requestCreateArchive() {
@@ -686,13 +769,16 @@ class FileViewModel(application: Application) : AndroidViewModel(application) {
     /** Opens the New Folder/File dialog; DELETE_CONFIRM goes through [deleteConfirmed]. */
     fun requestNewItem(type: DialogActionType) {
         when (type) {
-            DialogActionType.NEW_FOLDER, DialogActionType.NEW_FILE ->
+            DialogActionType.NEW_FOLDER, DialogActionType.NEW_FILE -> {
+                _nameError.value = null
                 _showNewItemDialog.value = type
+            }
             else -> {}
         }
     }
 
     fun dismissNewItem() {
+        _nameError.value = null
         _showNewItemDialog.value = null
     }
 
@@ -972,9 +1058,6 @@ class FileViewModel(application: Application) : AndroidViewModel(application) {
     // ======================================================================
 
     fun updateThemeMode(themeMode: AppThemeMode) = settingsRepository.updateThemeMode(themeMode)
-
-    /** Persists the OS skin; the theme composable switches scheme + icon set. */
-    fun updateOsType(type: OsType) = settingsRepository.updateOsType(type)
 
     /** Persists the tag; the caller recreates the Activity to re-inflate locale. */
     fun updateAppLanguage(tag: String) = settingsRepository.saveLanguageTag(tag)

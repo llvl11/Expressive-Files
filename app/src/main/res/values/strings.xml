@@ -116,7 +116,6 @@
     <string name="settings_title">Настройки</string>
     <string name="settings_section_appearance">Оформление и темы</string>
     <string name="settings_language_title">Язык приложения</string>
-    <string name="settings_os_type_title">Тип ОС</string>
     <string name="settings_theme_mode_title">Режим темы</string>
     <string name="settings_theme_system">Системная</string>
     <string name="settings_theme_light">Светлая</string>
@@ -139,6 +138,9 @@
     <string name="settings_default_format_title">Формат сжатия по умолчанию</string>
 
     <!-- == New item / rename / delete dialogs == -->
+    <string name="rename_error_reserved">Имена «.» и «..» зарезервированы</string>
+    <string name="rename_hint_unchanged">Имя не изменилось</string>
+    <string name="rename_warning_extension">Расширение файла изменится — файл может перестать открываться</string>
     <string name="new_folder_title">Новая папка</string>
     <string name="new_file_title">Новый файл</string>
     <string name="rename_title">Переименовать</string>
@@ -152,6 +154,7 @@
     <string name="rename_error_empty">Введите имя</string>
     <string name="rename_error_invalid">Имя содержит недопустимые символы</string>
     <string name="rename_error_exists">Файл с таким именем уже существует</string>
+    <string name="rename_error_failed">Не удалось выполнить операцию</string>
     <string name="dialog_rename">Переименовать</string>
     <string name="delete_single_message">Удалить «%1$s»? Это действие нельзя отменить.</string>
     <plurals name="delete_many_message">

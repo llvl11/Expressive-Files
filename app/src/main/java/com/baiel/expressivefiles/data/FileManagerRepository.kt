@@ -24,6 +24,15 @@ import java.nio.file.Files
 import java.nio.file.attribute.BasicFileAttributes
 
 /**
+ * Name-level failures, typed so the create/rename dialog can explain WHY an
+ * operation was rejected. Anonymous exceptions carried no reason up to the UI,
+ * so every rejection (blank name, illegal characters, duplicate name) looked
+ * identical: the dialog closed and nothing happened.
+ */
+class InvalidNameException : Exception("Invalid item name")
+class NameConflictException : Exception("An item with this name already exists")
+
+/**
  * All filesystem access funnels through this class.
  *
  * Design rules that keep it fast, correct and battery-friendly:
@@ -188,7 +197,9 @@ class FileManagerRepository(private val context: Context) {
         }
 
         val base: Comparator<FileItem> = when (sortMode) {
-            SortMode.NAME -> compareBy(String.CASE_INSENSITIVE_ORDER, FileItem::name)
+            // DEFAULT mirrors the platform's own ordering: name A-Z, pinned
+            // folders first (see the partition above).
+            SortMode.DEFAULT, SortMode.NAME -> compareBy(String.CASE_INSENSITIVE_ORDER, FileItem::name)
             SortMode.DATE -> compareBy { it.lastModified ?: 0L }
             SortMode.SIZE -> compareBy { it.size ?: 0L }
         }
@@ -419,6 +430,35 @@ class FileManagerRepository(private val context: Context) {
         name.isNotEmpty() && name != "." && name != ".." &&
             name.none { it == '/' || it == '\\' || it == '\u0000' }
 
+    /**
+     * True when both paths point at the SAME file. Media filesystems are
+     * case-insensitive, so "photo.jpg" and "Photo.jpg" resolve to one file and
+     * a naive exists() check would reject a legitimate case-only rename.
+     */
+    private fun isSameFile(a: File, b: File): Boolean =
+        try {
+            a.canonicalPath.equals(b.canonicalPath, ignoreCase = true)
+        } catch (_: Exception) {
+            false
+        }
+
+    /**
+     * Renames on disk, hopping through a temporary name when the direct rename
+     * is refused (case-only changes: the destination "exists" because it is
+     * the same file). The hop also makes the operation atomic-ish: if the
+     * second step fails, the original name is restored instead of losing the
+     * item to a half-applied rename.
+     */
+    private fun renameOnDisk(target: File, newFile: File): Boolean {
+        if (target.renameTo(newFile)) return true
+        val temp = File(newFile.parentFile, ".${newFile.name}.rename-tmp")
+        if (!target.renameTo(temp)) return false
+        return if (temp.renameTo(newFile)) true else {
+            temp.renameTo(target)
+            false
+        }
+    }
+
     suspend fun createDirectory(parentDir: File, folderName: String): Result<File> =
         withContext(Dispatchers.IO) {
             val cleanName = folderName.trim()
@@ -426,9 +466,9 @@ class FileManagerRepository(private val context: Context) {
                 val target = File(parentDir, cleanName)
                 when {
                     !isValidItemName(cleanName) ->
-                        Result.failure(IllegalArgumentException("Name must be a single file or folder name"))
+                        Result.failure(InvalidNameException())
                     target.exists() ->
-                        Result.failure(IllegalStateException("Folder already exists"))
+                        Result.failure(NameConflictException())
                     target.mkdirs() -> {
                         invalidateDirectoryCache()
                         Result.success(target)
@@ -447,9 +487,9 @@ class FileManagerRepository(private val context: Context) {
                 val target = File(parentDir, cleanName)
                 when {
                     !isValidItemName(cleanName) ->
-                        Result.failure(IllegalArgumentException("Name must be a single file or folder name"))
+                        Result.failure(InvalidNameException())
                     target.exists() ->
-                        Result.failure(IllegalStateException("File already exists"))
+                        Result.failure(NameConflictException())
                     target.createNewFile() -> {
                         invalidateDirectoryCache()
                         Result.success(target)
@@ -468,22 +508,46 @@ class FileManagerRepository(private val context: Context) {
                 Exception("No parent directory")
             )
             try {
-                val newFile = File(parent, cleanName)
                 when {
                     !isValidItemName(cleanName) ->
-                        Result.failure(IllegalArgumentException("Name must be a single file or folder name"))
-                    newFile.exists() ->
-                        Result.failure(IllegalStateException("Target name already exists"))
-                    target.renameTo(newFile) -> {
-                        invalidateDirectoryCache()
-                        Result.success(newFile)
+                        Result.failure(InvalidNameException())
+                    // Confirming with the untouched name is a no-op, not an
+                    // error: the dialog pre-fills the current name, so this is
+                    // the common "opened it and pressed the button" case.
+                    cleanName == target.name ->
+                        Result.success(target)
+                    else -> {
+                        val newFile = File(parent, cleanName)
+                        when {
+                            newFile.exists() && !isSameFile(target, newFile) ->
+                                Result.failure(NameConflictException())
+                            renameOnDisk(target, newFile) -> {
+                                invalidateDirectoryCache()
+                                Result.success(newFile)
+                            }
+                            else -> Result.failure(Exception("Rename operation failed"))
+                        }
                     }
-                    else -> Result.failure(Exception("Rename operation failed"))
                 }
             } catch (e: Exception) {
                 Result.failure(e)
             }
         }
+
+    /**
+     * Raw entry names directly inside [dir] (hidden files included, no
+     * sorting). The rename dialog snapshots these once at open time for live
+     * conflict detection; the repository's own exists() check at rename time
+     * remains the authority. A failed/unreadable listing yields an empty
+     * list, which simply disables the live check.
+     */
+    suspend fun siblingNamesIn(dir: File): List<String> = withContext(Dispatchers.IO) {
+        try {
+            dir.list()?.toList() ?: emptyList()
+        } catch (_: Exception) {
+            emptyList()
+        }
+    }
 
     suspend fun deleteFiles(files: List<File>): Boolean = withContext(Dispatchers.IO) {
         var allSuccess = true

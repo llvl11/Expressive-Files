@@ -165,8 +165,8 @@ fun HomeBottomActionStrip(
                     val accent = MaterialTheme.colorScheme.primary
                     val accentBg = MaterialTheme.colorScheme.primary.copy(alpha = 0.2f)
 
-                    // Role-based expressive shapes (Pixel only; MagicOS stays
-                    // circular): one stable silhouette per action.
+                    // Role-based expressive shapes: one stable silhouette
+                    // per action.
                     ChunkyIconButton(
                         icon = Icons.Rounded.ContentCopy,
                         onClick = onCopySelected,

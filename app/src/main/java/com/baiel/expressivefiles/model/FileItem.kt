@@ -135,6 +135,12 @@ data class ArchiveEntryItem(
 ) : Serializable
 
 enum class SortMode {
+    /**
+     * No explicit choice: the platform default ordering (name, A to Z), the
+     * same order Android's own file picker uses. Selected metrics are never
+     * highlighted in this state - the sort strip shows nothing chosen.
+     */
+    DEFAULT,
     NAME,
     DATE,
     SIZE
@@ -157,9 +163,13 @@ enum class AppThemeMode {
     DARK
 }
 
+/**
+ * Accent palette of the app. DYNAMIC (Material You) leads the list so the
+ * settings screen offers wallpaper-derived colors first.
+ */
 enum class AppColorPalette(val title: String) {
-    VIBRANT("Vibrant Palette"),
     DYNAMIC("Dynamic Material You"),
+    VIBRANT("Vibrant Palette"),
     NEON_VIOLET("Neon Violet"),
     CYBER_TEAL("Cyber Teal"),
     SUNSET_CORAL("Sunset Coral"),
@@ -167,25 +177,14 @@ enum class AppColorPalette(val title: String) {
     CITRUS_SUN("Citrus Gold")
 }
 
-/**
- * OS skin of the app: picks the color scheme flavor and the icon set.
- * PIXEL is the stock Android look; MAGIC_OS mimics Honor's MagicOS
- * (blue accent, white/black backgrounds, MagicOS-style glyphs).
- */
-enum class OsType(val title: String) {
-    PIXEL("Pixel"),
-    MAGIC_OS("MagicOS")
-}
-
 data class AppSettings(
     val themeMode: AppThemeMode = AppThemeMode.SYSTEM,
-    val colorPalette: AppColorPalette = AppColorPalette.VIBRANT,
-    val osType: OsType = OsType.PIXEL,
+    val colorPalette: AppColorPalette = AppColorPalette.DYNAMIC,
     val pitchBlack: Boolean = false,
     val showHiddenFiles: Boolean = false,
     val showStorageOverview: Boolean = true,
     val storageOverviewCollapsed: Boolean = false,
-    val sortMode: SortMode = SortMode.NAME,
+    val sortMode: SortMode = SortMode.DEFAULT,
     val sortOrder: SortOrder = SortOrder.ASCENDING,
     val viewMode: ViewMode = ViewMode.LIST,
     val defaultArchiveType: ArchiveType = ArchiveType.ZIP,

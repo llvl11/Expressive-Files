@@ -20,9 +20,17 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.rounded.InsertDriveFile
+import androidx.compose.material.icons.rounded.Android
 import androidx.compose.material.icons.rounded.Archive
+import androidx.compose.material.icons.rounded.Audiotrack
+import androidx.compose.material.icons.rounded.Code
+import androidx.compose.material.icons.rounded.Description
+import androidx.compose.material.icons.rounded.Folder
 import androidx.compose.material.icons.rounded.FolderZip
+import androidx.compose.material.icons.rounded.Image
 import androidx.compose.material.icons.rounded.MoreVert
+import androidx.compose.material.icons.rounded.Movie
 import androidx.compose.material.icons.rounded.Unarchive
 import androidx.compose.material3.Checkbox
 import androidx.compose.material3.CheckboxDefaults
@@ -59,7 +67,6 @@ import com.baiel.expressivefiles.R
 import com.baiel.expressivefiles.model.ArchiveType
 import com.baiel.expressivefiles.model.FileItem
 import com.baiel.expressivefiles.model.FileType
-import com.baiel.expressivefiles.model.OsType
 import com.baiel.expressivefiles.ui.theme.ApkColor
 import com.baiel.expressivefiles.ui.theme.Archive7zColor
 import com.baiel.expressivefiles.ui.theme.ArchiveColor
@@ -71,8 +78,6 @@ import com.baiel.expressivefiles.ui.theme.CodeColor
 import com.baiel.expressivefiles.ui.theme.DocumentColor
 import com.baiel.expressivefiles.ui.theme.FolderColor
 import com.baiel.expressivefiles.ui.theme.ImageColor
-import com.baiel.expressivefiles.ui.theme.LocalOsType
-import com.baiel.expressivefiles.ui.theme.OsIcons
 import com.baiel.expressivefiles.ui.theme.OtherFileColor
 import com.baiel.expressivefiles.ui.theme.PillShape
 import com.baiel.expressivefiles.ui.theme.VideoColor
@@ -87,35 +92,42 @@ import kotlin.math.pow
 
 fun getFileIconAndColor(
     item: FileItem,
-    themedFolderColor: Color? = null,
-    osType: OsType = OsType.PIXEL
+    themedFolderColor: Color? = null
 ): Pair<ImageVector, Color> {
     if (item.isDirectory) {
-        return Pair(OsIcons.folder(osType), themedFolderColor ?: FolderColor)
+        return Pair(Icons.Rounded.Folder, themedFolderColor ?: FolderColor)
     }
 
     return when (item.fileType) {
-        FileType.ARCHIVE -> {
-            when (osType) {
-                // MagicOS skin uses one uniform glyph for every format.
-                OsType.MAGIC_OS -> Pair(OsIcons.archive(osType), ArchiveColor)
-                else -> when (item.archiveType) {
-                    ArchiveType.ZIP -> Pair(Icons.Rounded.FolderZip, ArchiveZipColor)
-                    ArchiveType.SEVEN_Z -> Pair(Icons.Rounded.Archive, Archive7zColor)
-                    ArchiveType.TAR, ArchiveType.TAR_GZ -> Pair(Icons.Rounded.Unarchive, ArchiveTarColor)
-                    ArchiveType.RAR -> Pair(Icons.Rounded.Archive, ArchiveRarColor)
-                    else -> Pair(Icons.Rounded.FolderZip, ArchiveZipColor)
-                }
+        FileType.ARCHIVE ->
+            when (item.archiveType) {
+                ArchiveType.ZIP -> Pair(Icons.Rounded.FolderZip, ArchiveZipColor)
+                ArchiveType.SEVEN_Z -> Pair(Icons.Rounded.Archive, Archive7zColor)
+                ArchiveType.TAR, ArchiveType.TAR_GZ -> Pair(Icons.Rounded.Unarchive, ArchiveTarColor)
+                ArchiveType.RAR -> Pair(Icons.Rounded.Archive, ArchiveRarColor)
+                else -> Pair(Icons.Rounded.FolderZip, ArchiveZipColor)
             }
-        }
-        FileType.IMAGE -> Pair(OsIcons.fileType(FileType.IMAGE, osType), ImageColor)
-        FileType.VIDEO -> Pair(OsIcons.fileType(FileType.VIDEO, osType), VideoColor)
-        FileType.AUDIO -> Pair(OsIcons.fileType(FileType.AUDIO, osType), AudioColor)
-        FileType.DOCUMENT -> Pair(OsIcons.fileType(FileType.DOCUMENT, osType), DocumentColor)
-        FileType.CODE -> Pair(OsIcons.fileType(FileType.CODE, osType), CodeColor)
-        FileType.APK -> Pair(OsIcons.fileType(FileType.APK, osType), ApkColor)
-        else -> Pair(OsIcons.fileType(FileType.OTHER, osType), OtherFileColor)
+        FileType.IMAGE -> Pair(fileTypeIcon(FileType.IMAGE), ImageColor)
+        FileType.VIDEO -> Pair(fileTypeIcon(FileType.VIDEO), VideoColor)
+        FileType.AUDIO -> Pair(fileTypeIcon(FileType.AUDIO), AudioColor)
+        FileType.DOCUMENT -> Pair(fileTypeIcon(FileType.DOCUMENT), DocumentColor)
+        FileType.CODE -> Pair(fileTypeIcon(FileType.CODE), CodeColor)
+        FileType.APK -> Pair(fileTypeIcon(FileType.APK), ApkColor)
+        else -> Pair(fileTypeIcon(FileType.OTHER), OtherFileColor)
     }
+}
+
+/** Stock Material rounded glyph for a file type (shared by every surface). */
+fun fileTypeIcon(type: FileType): ImageVector = when (type) {
+    FileType.FOLDER -> Icons.Rounded.Folder
+    FileType.ARCHIVE -> Icons.Rounded.FolderZip
+    FileType.IMAGE -> Icons.Rounded.Image
+    FileType.VIDEO -> Icons.Rounded.Movie
+    FileType.AUDIO -> Icons.Rounded.Audiotrack
+    FileType.DOCUMENT -> Icons.Rounded.Description
+    FileType.CODE -> Icons.Rounded.Code
+    FileType.APK -> Icons.Rounded.Android
+    FileType.OTHER -> Icons.AutoMirrored.Rounded.InsertDriveFile
 }
 
 fun formatFileSize(bytes: Long): String {
@@ -250,9 +262,8 @@ private fun ThumbnailSlot(
 @Composable
 private fun rememberIconTint(item: FileItem): Pair<ImageVector, Color> {
     val themedFolderColor = MaterialTheme.colorScheme.primary
-    val osType = LocalOsType.current
-    return remember(item.fileType, item.archiveType, themedFolderColor, osType) {
-        getFileIconAndColor(item, themedFolderColor, osType)
+    return remember(item.fileType, item.archiveType, themedFolderColor) {
+        getFileIconAndColor(item, themedFolderColor)
     }
 }
 
@@ -347,8 +358,6 @@ fun FileListCard(
 ) {
     val (icon, color) = rememberIconTint(item)
     val gestures = rememberCardGestures(onClick, onLongClick)
-    // MagicOS: rounder, borderless, flat cards.
-    val magic = LocalOsType.current == OsType.MAGIC_OS
     val cardShape = osCardShape()
 
     Surface(
@@ -359,7 +368,7 @@ fun FileListCard(
         color = if (isSelected) lerp(MaterialTheme.colorScheme.primaryContainer, MaterialTheme.colorScheme.surface, 0.3f)
                 else MaterialTheme.colorScheme.surface,
         border = if (isSelected) BorderStroke(1.dp, MaterialTheme.colorScheme.primary) else null,
-        shadowElevation = if (magic) 0.dp else if (isSelected) 3.dp else 1.dp
+        shadowElevation = if (isSelected) 3.dp else 1.dp
     ) {
         Row(
             modifier = Modifier
@@ -484,7 +493,6 @@ fun FileGridCard(
 ) {
     val (icon, color) = rememberIconTint(item)
     val gestures = rememberCardGestures(onClick, onLongClick)
-    val magic = LocalOsType.current == OsType.MAGIC_OS
     val cardShape = osCardShape()
 
     Surface(
@@ -495,7 +503,7 @@ fun FileGridCard(
         color = if (isSelected) lerp(MaterialTheme.colorScheme.primaryContainer, MaterialTheme.colorScheme.surface, 0.3f)
                 else MaterialTheme.colorScheme.surface,
         border = if (isSelected) BorderStroke(1.dp, MaterialTheme.colorScheme.primary) else null,
-        shadowElevation = if (magic) 0.dp else if (isSelected) 3.dp else 1.dp
+        shadowElevation = if (isSelected) 3.dp else 1.dp
     ) {
         Box(modifier = Modifier.padding(12.dp)) {
             Column(
@@ -582,7 +590,6 @@ fun FileExpressiveCard(
         label = "expressive_shadow"
     )
 
-    val magic = LocalOsType.current == OsType.MAGIC_OS
     val cardShape = osCardShape(expressive = true)
 
     Surface(
@@ -593,7 +600,7 @@ fun FileExpressiveCard(
         color = if (isSelected) lerp(MaterialTheme.colorScheme.primaryContainer, MaterialTheme.colorScheme.surface, 0.25f)
                 else MaterialTheme.colorScheme.surface,
         border = if (isSelected) BorderStroke(2.dp, MaterialTheme.colorScheme.primary) else null,
-        shadowElevation = if (magic) 0.dp else cardShadow
+        shadowElevation = cardShadow
     ) {
         Column(modifier = Modifier.fillMaxWidth()) {
             Box(

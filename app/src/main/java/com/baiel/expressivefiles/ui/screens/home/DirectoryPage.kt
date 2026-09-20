@@ -1,5 +1,7 @@
 package com.baiel.expressivefiles.ui.screens.home
 
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.rounded.Folder
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.expandVertically
 import androidx.compose.animation.fadeIn
@@ -91,10 +93,11 @@ import com.baiel.expressivefiles.ui.components.FileListCard
 import com.baiel.expressivefiles.ui.components.HazeFadeBand
 import com.baiel.expressivefiles.ui.components.StorageHeroCard
 import com.baiel.expressivefiles.ui.components.elasticScrollObserver
+import com.baiel.expressivefiles.ui.components.fileTypeIcon
 import com.baiel.expressivefiles.ui.components.rememberElasticScrollState
 import com.baiel.expressivefiles.ui.theme.ChunkyIconShape
-import com.baiel.expressivefiles.ui.theme.LocalOsType
-import com.baiel.expressivefiles.ui.theme.OsIcons
+import com.baiel.expressivefiles.ui.theme.ChunkyTileShape
+import com.baiel.expressivefiles.ui.theme.ChunkySheetShape
 import com.baiel.expressivefiles.ui.theme.PillShape
 import dev.chrisbanes.haze.HazeState
 import dev.chrisbanes.haze.HazeTint
@@ -386,7 +389,6 @@ fun DirectoryPage(
                 // Keep filter and sort strips together; hide both while searching.
                 if (searchQuery.isEmpty()) {
                     Column {
-                        val osType = LocalOsType.current
                         val stripScale = remember { Animatable(0.94f) }
                         LaunchedEffect(directory.path) {
                             stripScale.snapTo(0.94f)
@@ -423,7 +425,7 @@ fun DirectoryPage(
                                         text = label,
                                         selected = selectedCategory == type,
                                         onClick = { onCategoryClick(type) },
-                                        icon = type?.let { OsIcons.fileType(it, osType) }
+                                        icon = type?.let { fileTypeIcon(it) }
                                     )
                                 }
                             }
@@ -660,7 +662,7 @@ private fun EmptyFolderView(isSearch: Boolean) {
             shape = ChunkyIconShape
         ) {
             Icon(
-                imageVector = OsIcons.folder(LocalOsType.current),
+                imageVector = Icons.Rounded.Folder,
                 contentDescription = null,
                 tint = MaterialTheme.colorScheme.primary,
                 modifier = Modifier.size(36.dp)

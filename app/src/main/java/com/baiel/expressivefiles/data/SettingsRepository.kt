@@ -10,7 +10,6 @@ import com.baiel.expressivefiles.model.AppThemeMode
 import com.baiel.expressivefiles.model.ArchiveType
 import com.baiel.expressivefiles.model.SortMode
 import com.baiel.expressivefiles.model.SortOrder
-import com.baiel.expressivefiles.model.OsType
 import com.baiel.expressivefiles.model.ViewMode
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -25,7 +24,7 @@ class SettingsRepository(context: Context) {
     private fun loadSettings(): AppSettings {
         val themeModeName = prefs.getString("theme_mode", AppThemeMode.SYSTEM.name) ?: AppThemeMode.SYSTEM.name
         val paletteName = prefs.getString("color_palette", AppColorPalette.DYNAMIC.name) ?: AppColorPalette.DYNAMIC.name
-        val sortModeName = prefs.getString("sort_mode", SortMode.NAME.name) ?: SortMode.NAME.name
+        val sortModeName = prefs.getString("sort_mode", SortMode.DEFAULT.name) ?: SortMode.DEFAULT.name
         val sortOrderName = prefs.getString("sort_order", SortOrder.ASCENDING.name) ?: SortOrder.ASCENDING.name
         val viewModeName = prefs.getString("view_mode", ViewMode.LIST.name) ?: ViewMode.LIST.name
         val archiveTypeName = prefs.getString("default_archive_type", ArchiveType.ZIP.name) ?: ArchiveType.ZIP.name
@@ -33,13 +32,11 @@ class SettingsRepository(context: Context) {
         return AppSettings(
             themeMode = runCatching { AppThemeMode.valueOf(themeModeName) }.getOrDefault(AppThemeMode.SYSTEM),
             colorPalette = runCatching { AppColorPalette.valueOf(paletteName) }.getOrDefault(AppColorPalette.VIBRANT),
-            osType = runCatching { OsType.valueOf(prefs.getString("os_type", OsType.PIXEL.name) ?: OsType.PIXEL.name) }
-                .getOrDefault(OsType.PIXEL),
             pitchBlack = prefs.getBoolean("pitch_black", false),
             showHiddenFiles = prefs.getBoolean("show_hidden_files", false),
             showStorageOverview = prefs.getBoolean("show_storage_overview", true),
             storageOverviewCollapsed = prefs.getBoolean("storage_overview_collapsed", false),
-            sortMode = runCatching { SortMode.valueOf(sortModeName) }.getOrDefault(SortMode.NAME),
+            sortMode = runCatching { SortMode.valueOf(sortModeName) }.getOrDefault(SortMode.DEFAULT),
             sortOrder = runCatching { SortOrder.valueOf(sortOrderName) }.getOrDefault(SortOrder.ASCENDING),
             viewMode = runCatching { ViewMode.valueOf(viewModeName) }.getOrDefault(ViewMode.LIST),
             defaultArchiveType = runCatching { ArchiveType.valueOf(archiveTypeName) }.getOrDefault(ArchiveType.ZIP),
@@ -75,11 +72,6 @@ class SettingsRepository(context: Context) {
     fun updateColorPalette(palette: AppColorPalette) {
         prefs.edit { putString("color_palette", palette.name) }
         _settings.value = _settings.value.copy(colorPalette = palette)
-    }
-
-    fun updateOsType(type: OsType) {
-        prefs.edit { putString("os_type", type.name) }
-        _settings.value = _settings.value.copy(osType = type)
     }
 
     fun updatePitchBlack(enabled: Boolean) {

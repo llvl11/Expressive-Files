@@ -63,6 +63,7 @@ import com.baiel.expressivefiles.ui.components.CreateArchiveDialog
 import com.baiel.expressivefiles.ui.components.DialogActionType
 import com.baiel.expressivefiles.ui.components.FileActionSheet
 import com.baiel.expressivefiles.ui.components.NewItemDialog
+import com.baiel.expressivefiles.ui.components.RenameDialog
 import com.baiel.expressivefiles.ui.screens.HomeScreen
 import com.baiel.expressivefiles.ui.screens.SettingsScreen
 import com.baiel.expressivefiles.ui.screens.StorageAnalysisScreen
@@ -118,7 +119,6 @@ class MainActivity : ComponentActivity() {
             ExpressiveFilesTheme(
                 themeMode = settings.themeMode,
                 colorPalette = settings.colorPalette,
-                osType = settings.osType,
                 pitchBlack = settings.pitchBlack
             ) {
                 // No full-screen Surface here: the window background plus the
@@ -412,26 +412,24 @@ private fun GlobalFileDialogs(viewModel: FileViewModel) {
             viewModel = viewModel,
             type = type,
             onDismiss = { viewModel.dismissNewItem() },
+            // Create/rename intents no longer pre-dismiss the dialog: the
+            // ViewModel closes it on success and keeps it open - with the
+            // reason shown inline - when the name is rejected.
             onConfirm = { name ->
-                if (type == DialogActionType.DELETE_CONFIRM) {
-                    viewModel.confirmDelete()
-                } else {
-                    viewModel.dismissNewItem()
-                    if (type == DialogActionType.NEW_FOLDER) viewModel.createFolder(name) else viewModel.createNewFile(name)
+                when (type) {
+                    DialogActionType.DELETE_CONFIRM -> viewModel.confirmDelete()
+                    DialogActionType.NEW_FOLDER -> viewModel.createFolder(name)
+                    DialogActionType.NEW_FILE -> viewModel.createNewFile(name)
                 }
             }
         )
     }
     renameTargetItem?.let { target ->
-        NewItemDialog(
+        RenameDialog(
             viewModel = viewModel,
-            type = DialogActionType.RENAME,
-            initialValue = target.name,
+            item = target,
             onDismiss = { viewModel.closeRename() },
-            onConfirm = { newName ->
-                viewModel.closeRename()
-                viewModel.renameFile(target, newName)
-            }
+            onConfirm = { newName -> viewModel.renameFile(target, newName) }
         )
     }
     activeArchiveInspectItem?.let { archiveItem ->
