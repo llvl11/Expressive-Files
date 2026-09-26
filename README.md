@@ -32,6 +32,7 @@ A fast, expressive Material 3 file manager for Android with a built-in archive e
 - Open files in external apps or share them via the system share sheet
 - **Storage analysis** dashboard with a storage hero card and per-category drill-down
 - Hardened operations: path-traversal rejection in create/rename, copy/move-into-own-tree rejection, and batch moves that never half-complete (all pinned by regression tests)
+- Nested-selection pruning: deleting, copying, or moving a folder together with files inside it never duplicates or strands the children
 
 ### Archive engine (no external tools needed)
 | Format | Create | Extract | Browse contents |
@@ -44,9 +45,11 @@ A fast, expressive Material 3 file manager for Android with a built-in archive e
 
 Archive creation and extraction run with live progress reporting, powered by Apache Commons Compress, XZ for Java, and junrar.
 
+Extraction **never overwrites existing files**: kept files are counted and reported in the completion toast while missing entries are still added, so re-extraction can never truncate what you already have.
+
 ### Expressive UI
 - **Expressive Material You styling**: stock-*Pixel* look with chunky "cookie" buttons, sheets, and switches
-- **Seven color palettes** including Dynamic Material You wallpaper theming, Neon Violet, Cyber Teal, Sunset Coral, Emerald Mint, and Citrus Gold
+- **Seven color palettes** including Dynamic Material You wallpaper theming, Vibrant Palette, Neon Violet, Cyber Teal, Sunset Coral, Emerald Mint, and Citrus Gold
 - System / light / dark theme modes
 - Physics-based motion: elastic scroll-follow for floating strips and the FAB, springy enter transitions, and glassmorphism (real-time blur) chrome
 - Custom hand-drawn "cookie" shapes for icon buttons
@@ -63,7 +66,7 @@ Archive creation and extraction run with live progress reporting, powered by Apa
 | Images / video thumbnails | Coil (incl. `coil-video`) |
 | Archives | Commons Compress + XZ + junrar |
 | DI | Manual (viewModels + repositories) |
-| Testing | JUnit4, Robolectric, Compose UI tests, Roborazzi screenshot tests |
+| Testing | JUnit4, Robolectric, Compose UI tests |
 
 ## Project layout
 
@@ -82,11 +85,13 @@ app/src/main/java/com/baiel/expressivefiles/
 
 ## Building
 
-Requirements: **Android Studio** (latest stable) with SDK 37, JDK 17+.
+Requirements: **Android Studio** (latest stable) with SDK 37. The Gradle daemon JDK is pinned and auto-provisioned (see `gradle/gradle-daemon-jvm.properties`), so no manual JDK setup is needed.
+
+Prebuilt APKs are published on the [Releases page](https://github.com/llvl11/Expressive-Files/releases).
 
 1. Clone the repository:
    ```bash
-   git clone https://github.com/llvl11/File-manager2.git
+   git clone https://github.com/llvl11/Expressive-Files.git
    ```
 2. Open the project in Android Studio and let Gradle sync.
 3. Optional secrets live in a `.env` file at the repo root (see `.env.example`). None are required to build and run the app.
@@ -109,11 +114,12 @@ The app requests **MANAGE_EXTERNAL_STORAGE** ("All files access"), which must be
 
 ## Testing
 
-The test suite runs on the JVM via Robolectric and covers:
-- Compose UI chrome (sort strips, storage hero, drifting-overlay geometry) via `createComposeRule`
-- File-operation regressions (traversal safety, same-directory moves, atomic batch behavior, copy preservation)
-- Expressive component contracts (theme palettes, shapes, accessibility touch targets)
-- Roborazzi screenshot tests for visual regression
+The test suite runs on the JVM via Robolectric — 15 classes, 82 tests — and covers:
+- Compose UI chrome (sort strips, directory chrome and empty states, storage hero, drifting-overlay geometry, action sheets) via `createComposeRule`
+- File-operation regressions (traversal safety, same-directory moves, atomic batch behavior, copy preservation, nested-selection pruning)
+- Archive-engine safety with real compressed archives (extraction never truncates or overwrites existing files, unique extract targets, typed-extension stripping, format labels)
+- Localization (English fallback errors mapped to localized strings, no-access folder messaging)
+- Expressive component contracts (theme palettes, shapes, accessibility touch targets, APK icon cache keys)
 
 ```bash
 ./gradlew :app:testDebugUnitTest
