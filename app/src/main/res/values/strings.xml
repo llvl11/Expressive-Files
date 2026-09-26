@@ -55,6 +55,8 @@
 
     <!-- == Listing == -->
     <string name="list_folder_empty">Папка пуста</string>
+    <string name="list_no_access">Нет доступа к этой папке</string>
+    <string name="list_no_access_hint">Проверьте разрешения или откройте другую папку</string>
     <string name="list_no_matches">Совпадений не найдено</string>
     <string name="list_no_matches_hint">Попробуйте изменить поисковый запрос</string>
     <string name="list_empty_hint">Нажмите «+», чтобы создать папку, файл или архив</string>
@@ -100,6 +102,7 @@
     <string name="analysis_total_used_label">Использовано всего</string>
     <string name="analysis_free_of_total">Свободно: %1$s из %2$s</string>
     <string name="analysis_breakdown_title">Разбивка по категориям</string>
+    <string name="analysis_breakdown_note">Оценка: сканируются 2 уровня вложенности и до 1200 файлов</string>
     <string name="analysis_cat_archives">Архивы и резервные копии (7z, Tar, Zip, Rar)</string>
     <string name="analysis_cat_images">Изображения и фото</string>
     <string name="analysis_cat_videos">Видео и фильмы</string>
@@ -194,6 +197,7 @@
     <string name="viewer_filter_hint">Фильтр содержимого архива…</string>
     <string name="viewer_reading_table">Чтение оглавления…</string>
     <string name="viewer_entry_sizes">%1$s (%2$s в сжатом виде)</string>
+    <string name="viewer_entry_size">%1$s</string>
     <string name="viewer_archive_error">Не удалось прочитать архив</string>
     <string name="viewer_archive_empty">Архив пуст или недоступен</string>
     <string name="viewer_no_matches">Совпадений нет</string>
@@ -225,11 +229,19 @@
     <string name="op_compression_complete">Сжатие завершено</string>
     <string name="op_extraction_failed">Ошибка распаковки</string>
     <string name="op_compression_failed">Ошибка сжатия</string>
+    <string name="archive_error_unknown">Неизвестная ошибка</string>
     <string name="op_done">Готово</string>
     <string name="toast_archive_created">Архив создан: %1$s</string>
     <string name="toast_extraction_complete">Распаковка завершена</string>
+    <plurals name="toast_extraction_kept">
+        <item quantity="one">Распаковка завершена: %1$d файл оставлен без изменений</item>
+        <item quantity="few">Распаковка завершена: %1$d файла оставлены без изменения</item>
+        <item quantity="many">Распаковка завершена: %1$d файлов оставлено без изменений</item>
+        <item quantity="other">Распаковка завершена: %1$d файла оставлено без изменения</item>
+    </plurals>
     <string name="toast_compress_cancelled">Сжатие отменено</string>
     <string name="toast_extract_cancelled">Распаковка отменена</string>
+    <string name="toast_archive_busy">Другая операция с архивом уже выполняется</string>
     <plurals name="toast_pasted_n">
         <item quantity="one">Вставлено элементов: %1$d</item>
         <item quantity="few">Вставлено элементов: %1$d</item>
@@ -237,6 +249,7 @@
         <item quantity="other">Вставлено элементов: %1$d</item>
     </plurals>
     <string name="toast_paste_failed">Не удалось вставить</string>
+    <string name="toast_delete_failed">Не удалось удалить</string>
 
     <!-- == APK install preflight == -->
     <string name="apk_unknown_sources_toast">Разрешите установку из этого источника, затем нажмите APK ещё раз</string>

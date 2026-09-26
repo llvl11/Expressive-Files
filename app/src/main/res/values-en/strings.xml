@@ -1,0 +1,239 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- == Top bar == -->
+    <string name="app_title">Files</string>
+    <string name="topbar_search">Search</string>
+    <string name="topbar_switch_view">Switch View</string>
+    <string name="topbar_sort">Sort</string>
+    <string name="topbar_settings">Settings</string>
+    <string name="topbar_select_all">Select All</string>
+    <string name="topbar_deselect_all">Deselect All</string>
+    <string name="topbar_clear_search">Clear search</string>
+    <string name="topbar_search_hint">Search files…</string>
+    <plurals name="topbar_selected_count">
+        <item quantity="one">%1$d selected</item>
+        <item quantity="other">%1$d selected</item>
+    </plurals>
+
+    <!-- == Predictive back / exit == -->
+    <string name="back_press_again_to_exit">Press back again to exit</string>
+
+    <!-- == Permission gate == -->
+    <string name="perm_all_files_access_title">All Files Access</string>
+    <string name="perm_all_files_access_body">Grant storage access to browse your files and extract zip/7z/tar/rar archives.</string>
+    <string name="action_not_now">Not now</string>
+    <string name="action_grant">Grant</string>
+
+    <!-- == FAB == -->
+    <string name="fab_add_actions">Add Actions</string>
+    <string name="fab_close_actions">Close Actions</string>
+    <string name="fab_new_folder">New Folder</string>
+    <string name="fab_new_file">New File</string>
+
+    <!-- == Clipboard strip == -->
+    <string name="clipboard_copy_action">Copy</string>
+    <string name="clipboard_move_action">Move</string>
+    <plurals name="clipboard_items_suffix">
+        <item quantity="one">%1$d item</item>
+        <item quantity="other">%1$d items</item>
+    </plurals>
+    <string name="clipboard_paste_hint">Paste into current folder</string>
+    <string name="clipboard_paste">Paste</string>
+    <string name="clipboard_clear">Clear clipboard</string>
+    <string name="strip_copy">Copy</string>
+    <string name="strip_move">Move</string>
+    <string name="strip_compress">Compress Archive</string>
+    <string name="strip_share">Share</string>
+    <string name="strip_delete">Delete</string>
+    <string name="strip_clear_selection">Clear selection</string>
+
+    <!-- == Listing == -->
+    <string name="list_folder_empty">Folder is empty</string>
+    <string name="list_no_access">No access to this folder</string>
+    <string name="list_no_access_hint">Check permissions or open another folder</string>
+    <string name="list_no_matches">No matching files</string>
+    <string name="list_no_matches_hint">Try searching for a different keyword</string>
+    <string name="list_empty_hint">Tap + below to create a folder, file, or compress archives</string>
+    <plurals name="list_items_suffix">
+        <item quantity="one">%1$d item</item>
+        <item quantity="other">%1$d items</item>
+    </plurals>
+    <string name="list_empty_dir">Empty</string>
+    <string name="list_size_unknown">—</string>
+    <string name="list_date_loading">Loading…</string>
+    <string name="badge_folder">FOLDER</string>
+
+    <!-- == Breadcrumbs == -->
+    <string name="crumb_home">Home</string>
+    <string name="crumb_root">Root</string>
+    <string name="crumb_navigate_up">Navigate Up</string>
+
+    <!-- == Category filters & sort bar == -->
+    <string name="filter_all">All</string>
+    <string name="filter_images">Images</string>
+    <string name="filter_videos">Videos</string>
+    <string name="filter_audio">Audio</string>
+    <string name="filter_docs">Docs</string>
+    <string name="filter_archives">Archives</string>
+    <string name="filter_code">Code</string>
+    <string name="filter_apk">APK</string>
+    <string name="sort_metric_name">Name</string>
+    <string name="sort_metric_size">Size</string>
+    <string name="sort_metric_date">Date</string>
+    <string name="sort_order_ascending">Ascending</string>
+    <string name="sort_order_descending">Descending</string>
+
+    <!-- == Storage hero card == -->
+    <string name="hero_used_suffix">used</string>
+    <string name="hero_remaining_of">%1$s remaining of %2$s</string>
+    <string name="hero_expand">Expand storage overview</string>
+    <string name="hero_collapse">Collapse storage overview</string>
+
+    <!-- == Storage analysis screen == -->
+    <string name="analysis_title">Storage Analysis</string>
+    <string name="analysis_total_used_label">Total Space Used</string>
+    <string name="analysis_free_of_total">Free space: %1$s of %2$s</string>
+    <string name="analysis_breakdown_title">Categories Breakdown</string>
+    <string name="analysis_breakdown_note">Estimate: scans 2 directory levels and up to 1200 files</string>
+    <string name="analysis_cat_archives">Archives &amp; Backups (7z, Tar, Zip, Rar)</string>
+    <string name="analysis_cat_images">Images &amp; Photos</string>
+    <string name="analysis_cat_videos">Videos &amp; Movies</string>
+    <string name="analysis_cat_documents">Documents &amp; PDFs</string>
+    <string name="analysis_cat_audio">Audio &amp; Music</string>
+    <string name="analysis_cat_apks">Installed Apps &amp; APKs</string>
+
+    <!-- == Category drill-down screen == -->
+    <string name="category_loading">Loading %1$s…</string>
+    <string name="category_none_found">No %1$s found</string>
+    <string name="category_none_found_hint">Try another category or add files to your device</string>
+
+    <!-- == Settings screen == -->
+    <string name="settings_title">Settings</string>
+    <string name="settings_section_appearance">Appearance &amp; Theming</string>
+    <string name="settings_language_title">App Language</string>
+    <string name="settings_theme_mode_title">Theme Mode</string>
+    <string name="settings_theme_system">System</string>
+    <string name="settings_theme_light">Light</string>
+    <string name="settings_theme_dark">Dark</string>
+    <string name="settings_pitch_black_title">Pitch Black (AMOLED)</string>
+    <string name="settings_pitch_black_subtitle">True black background for dark modes</string>
+    <string name="settings_color_palette_title">Color Palette</string>
+    <string name="settings_section_files">Files &amp; Display</string>
+    <string name="settings_storage_overview_title">Show Storage Overview</string>
+    <string name="settings_storage_overview_subtitle">Display internal storage card &amp; category badges on home screen</string>
+    <string name="settings_hidden_files_title">Show Hidden Files</string>
+    <string name="settings_hidden_files_subtitle">Display files and directories starting with .</string>
+    <string name="settings_view_mode_title">Default View Mode</string>
+    <string name="settings_view_list">List</string>
+    <string name="settings_view_grid">Grid</string>
+    <string name="settings_view_cards">Cards</string>
+    <string name="settings_section_archive">Archive &amp; Compression</string>
+    <string name="settings_extract_subfolder_title">Extract to Subfolder</string>
+    <string name="settings_extract_subfolder_subtitle">Automatically create a folder named after the archive</string>
+    <string name="settings_default_format_title">Default Compression Format</string>
+
+    <!-- == New item / rename / delete dialogs == -->
+    <string name="rename_error_reserved">\".\" and \"..\" are reserved names</string>
+    <string name="rename_hint_unchanged">Name unchanged</string>
+    <string name="rename_warning_extension">The file extension will change — the file may no longer open correctly</string>
+    <string name="new_folder_title">New Folder</string>
+    <string name="new_file_title">New File</string>
+    <string name="rename_title">Rename</string>
+    <string name="delete_confirm_title">Confirm Deletion</string>
+    <string name="dialog_cancel">Cancel</string>
+    <string name="dialog_create">Create</string>
+    <string name="dialog_delete">Delete</string>
+    <string name="new_folder_placeholder">Folder name</string>
+    <string name="new_file_placeholder">file.txt</string>
+    <string name="rename_placeholder">New name</string>
+    <string name="rename_error_empty">Enter a name</string>
+    <string name="rename_error_invalid">Name contains invalid characters</string>
+    <string name="rename_error_exists">An item with this name already exists</string>
+    <string name="rename_error_failed">Couldn\'t complete the operation</string>
+    <string name="dialog_rename">Rename</string>
+    <string name="delete_single_message">Are you sure you want to delete \'%1$s\'? This action cannot be undone.</string>
+    <plurals name="delete_many_message">
+        <item quantity="one">Are you sure you want to delete %1$d item? This action cannot be undone.</item>
+        <item quantity="other">Are you sure you want to delete %1$d items? This action cannot be undone.</item>
+    </plurals>
+
+    <!-- == Create archive dialog == -->
+    <string name="archive_create_title">Create Archive</string>
+    <plurals name="archive_items_selected">
+        <item quantity="one">%1$d item selected</item>
+        <item quantity="other">%1$d items selected</item>
+    </plurals>
+    <string name="archive_name_label">Archive Name</string>
+    <string name="archive_format_label">Compression Format</string>
+    <string name="archive_compress">Compress</string>
+
+    <!-- == File action sheet == -->
+    <string name="sheet_open_folder">Open Folder</string>
+    <string name="sheet_open_with_app">Open with app</string>
+    <string name="sheet_open_external">Open in another app</string>
+    <string name="chooser_title">Choose an app</string>
+    <string name="sheet_extract_all">Extract All</string>
+    <string name="sheet_inspect">Inspect</string>
+    <string name="sheet_copy">Copy</string>
+    <string name="sheet_cut">Cut</string>
+    <string name="sheet_compress">Compress</string>
+    <string name="sheet_rename">Rename</string>
+    <string name="sheet_share">Share</string>
+    <string name="sheet_delete">Delete</string>
+
+    <!-- == Archive viewer sheet == -->
+    <string name="viewer_filter_hint">Filter entries inside archive…</string>
+    <string name="viewer_reading_table">Reading archive table…</string>
+    <string name="viewer_entry_sizes">%1$s (%2$s compressed)</string>
+    <string name="viewer_entry_size">%1$s</string>
+    <string name="viewer_archive_error">Couldn\'t read archive</string>
+    <string name="viewer_archive_empty">Archive is empty or unreadable</string>
+    <string name="viewer_no_matches">No matching entries found</string>
+    <string name="viewer_extract_all">Extract All Files</string>
+    <string name="viewer_uncompressed_size">%1$s uncompressed</string>
+    <plurals name="viewer_entries_count">
+        <item quantity="one">%1$d entry</item>
+        <item quantity="other">%1$d entries</item>
+    </plurals>
+
+    <!-- == Archive progress dialog == -->
+    <string name="progress_hide">Hide</string>
+    <string name="progress_show">Show dialog</string>
+    <string name="progress_notifications_off">Notifications are off; the hidden task runs without a progress notification</string>
+    <string name="progress_cancel">Cancel</string>
+    <string name="progress_working">Working…</string>
+
+    <!-- == Archive operations (titles/notifications/toasts) == -->
+    <string name="op_creating">Creating %1$s</string>
+    <string name="op_extracting_name">Extracting %1$s</string>
+    <string name="op_extracting_zip">Extracting ZIP</string>
+    <string name="op_extracting_7z">Extracting 7Z</string>
+    <string name="op_extracting_tar">Extracting TAR</string>
+    <string name="op_extracting_rar">Extracting RAR</string>
+    <string name="op_extracting_archive">Extracting Archive</string>
+    <string name="op_extraction_complete">Extraction Complete</string>
+    <string name="op_compression_complete">Compression Complete</string>
+    <string name="op_extraction_failed">Extraction Failed</string>
+    <string name="op_compression_failed">Compression Failed</string>
+    <string name="archive_error_unknown">Unknown error</string>
+    <string name="op_done">Done</string>
+    <string name="toast_archive_created">Archive created: %1$s</string>
+    <string name="toast_extraction_complete">Extraction complete</string>
+    <plurals name="toast_extraction_kept">
+        <item quantity="one">Extraction complete — %1$d existing file kept</item>
+        <item quantity="other">Extraction complete — %1$d existing files kept</item>
+    </plurals>
+    <string name="toast_compress_cancelled">Compression cancelled</string>
+    <string name="toast_extract_cancelled">Extraction cancelled</string>
+    <string name="toast_archive_busy">Another archive operation is already in progress</string>
+    <plurals name="toast_pasted_n">
+        <item quantity="one">Pasted %1$d item</item>
+        <item quantity="other">Pasted %1$d items</item>
+    </plurals>
+    <string name="toast_paste_failed">Paste failed</string>
+    <string name="toast_delete_failed">Delete failed</string>
+
+    <!-- == APK install preflight == -->
+    <string name="apk_unknown_sources_toast">Please allow installing apps from this source, then tap the APK again</string>
+    <string name="apk_no_handler_toast">No app can open this file</string>
+</resources>

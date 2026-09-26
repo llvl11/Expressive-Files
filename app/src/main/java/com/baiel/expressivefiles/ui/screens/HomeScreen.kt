@@ -139,9 +139,14 @@ fun HomeScreen(
     val selectedPaths by viewModel.selectedPaths.collectAsStateWithLifecycle()
     val isAllSelected by viewModel.isAllSelected.collectAsStateWithLifecycle()
     val filesDirectory by viewModel.filesDirectory.collectAsStateWithLifecycle()
+    val unreadableFolder by viewModel.unreadableFolder.collectAsStateWithLifecycle()
     val categorySorts by viewModel.categorySorts.collectAsStateWithLifecycle()
 
-    var isSearchActive by remember { mutableStateOf(false) }
+    // Saveable: a rotation/language change recreates the activity while the
+    // ViewModel keeps searchQuery - with a plain `remember` the search field
+    // vanished but the listing stayed filtered (and Back then exited the app
+    // instead of clearing the query).
+    var isSearchActive by rememberSaveable { mutableStateOf(false) }
     var showSortBar by rememberSaveable { mutableStateOf(false) }
     var showFabMenu by remember { mutableStateOf(false) }
 
@@ -192,6 +197,7 @@ fun HomeScreen(
             val canNavigateBack = viewModel.selectedPaths.value.isNotEmpty() ||
                     showFabMenu || isSearchActive || showSortBar ||
                     (viewModel.selectedCategory.value != null) ||
+                    viewModel.hasBackStack ||
                     (viewModel.currentDirectory.value.absolutePath !=
                         viewModel.rootDirectory.absolutePath)
             if (!canNavigateBack) {
@@ -360,10 +366,12 @@ fun HomeScreen(
                 hazeState = hazeState,
                 selectedCategory = selectedCategory,
                 searchQuery = searchQuery,
+                isSearchActive = isSearchActive,
                 viewMode = settings.viewMode,
                 isSelectionMode = isSelectionMode,
                 selectedPaths = selectedPaths,
                 filesDirectory = filesDirectory,
+                unreadableFolder = unreadableFolder,
                 // Height of the floating top bar the page is full-bleed
                 // under; hero + floating overlays clear it inside the page.
                 topChromeHeight = topChromeHeight,
@@ -414,8 +422,10 @@ fun HomeScreen(
             // background is drawn here: the progressive blur band at the top
             // of DirectoryPage now spans this whole area (full frost at the
             // screen edge melting downward), so the bar and the frost read
-            // as one continuous surface with no hard bottom edge. Lives
-            // OUTSIDE the list's subtree so it never samples its own pixels.
+            // as one continuous surface with no hard bottom edge. In search
+            // mode that band is dropped (DirectoryPage), so the field floats
+            // on the bare listing. Lives OUTSIDE the list's subtree so it
+            // never samples its own pixels.
             Box(
                 modifier = Modifier
                     .align(Alignment.TopCenter)

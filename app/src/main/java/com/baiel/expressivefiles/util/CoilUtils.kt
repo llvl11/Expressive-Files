@@ -33,8 +33,12 @@ class ApkIconFetcher(
         val cacheDir = context.cacheDir.resolve("apk_icons")
         if (!cacheDir.exists()) cacheDir.mkdirs()
 
-        // Generate a stable key based on path and last modified
-        val key = md5("${data.absolutePath}:${data.lastModified()}")
+        // Size bucket in the key: the PNG cached below is downscaled to THIS
+        // requester's dimensions, so without the bucket the first (small) view
+        // would serve its bitmap to every later larger view forever.
+        val reqW = (requestedSize.width as? coil.size.Dimension.Pixels)?.px ?: -1
+        val reqH = (requestedSize.height as? coil.size.Dimension.Pixels)?.px ?: -1
+        val key = apkIconCacheKey(data.absolutePath, data.lastModified(), reqW, reqH)
         val cacheFile = cacheDir.resolve("$key.png")
 
         if (cacheFile.exists()) {
@@ -99,11 +103,6 @@ class ApkIconFetcher(
         return source.scale(targetW, targetH)
     }
 
-    private fun md5(input: String): String {
-        val bytes = MessageDigest.getInstance("MD5").digest(input.toByteArray())
-        return bytes.joinToString("") { "%02x".format(it) }
-    }
-
     class Factory(private val context: Context) : Fetcher.Factory<File> {
         override fun create(data: File, options: Options, imageLoader: ImageLoader): Fetcher? {
             if (data.extension.lowercase() == "apk") {
@@ -112,6 +111,23 @@ class ApkIconFetcher(
             return null
         }
     }
+}
+
+/**
+ * Disk-cache key for an APK icon that was downscaled to the request size.
+ * Path + mtime identify the icon's content; reqWidth/reqHeight identify the
+ * baked-in dimensions (-1 = original/undefined), because one APK renders in
+ * list rows, grids and expressive cards at visibly different sizes.
+ */
+internal fun apkIconCacheKey(
+    path: String,
+    lastModified: Long,
+    reqWidth: Int,
+    reqHeight: Int
+): String {
+    val digest = MessageDigest.getInstance("MD5")
+        .digest("$path:$lastModified:$reqWidth x$reqHeight".toByteArray())
+    return digest.joinToString("") { "%02x".format(it) }
 }
 
 /**

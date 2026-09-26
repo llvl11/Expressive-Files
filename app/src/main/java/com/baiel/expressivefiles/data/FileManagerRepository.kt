@@ -15,6 +15,7 @@ import com.baiel.expressivefiles.model.SortOrder
 import com.baiel.expressivefiles.model.StorageStats
 import com.baiel.expressivefiles.model.VIDEO_EXTENSIONS
 import com.baiel.expressivefiles.model.determineFileType
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.Job
@@ -31,6 +32,29 @@ import java.nio.file.attribute.BasicFileAttributes
  */
 class InvalidNameException : Exception("Invalid item name")
 class NameConflictException : Exception("An item with this name already exists")
+
+/**
+ * Drops sources that live inside another selected source. The top-level item
+ * already carries them for copy/move/delete, so acting on a child separately
+ * would duplicate it on copy - and on move relocate the child OUT of the
+ * folder being moved (child renamed to the destination root first, then the
+ * folder moves without it). Order-independent: a child is dropped whenever any
+ * other input is its ancestor.
+ */
+internal fun pruneNestedSources(files: List<File>): List<File> {
+    if (files.size < 2) return files
+    fun canonicalPath(file: File): String =
+        runCatching { file.canonicalFile.path }.getOrElse { file.absoluteFile.path }
+    val paths = files.map(::canonicalPath)
+    return files.filterIndexed { index, _ ->
+        val candidate = paths[index]
+        paths.none { other ->
+            candidate.length > other.length &&
+                candidate.startsWith(other) &&
+                candidate[other.length] == File.separatorChar
+        }
+    }
+}
 
 /**
  * All filesystem access funnels through this class.
@@ -90,12 +114,21 @@ class FileManagerRepository(private val context: Context) {
     @OptIn(ExperimentalCoroutinesApi::class)
     private val backgroundScanDispatcher = Dispatchers.IO.limitedParallelism(1)
 
-    val rootStorageDirectory: File = try {
-        val ext = Environment.getExternalStorageDirectory()
-        if (ext != null && ext.exists() && ext.canRead()) ext else context.filesDir
-    } catch (_: Exception) {
-        context.filesDir
-    }
+    /**
+     * Best root for capacity/scan statistics. Evaluated on EVERY access: the
+     * repository is constructed before MANAGE_EXTERNAL_STORAGE can have been
+     * granted (it is requested from the Settings screen), so a construction-time
+     * snapshot would keep pointing at the app sandbox for the rest of the
+     * process - the Storage Analysis screen would then report the data
+     * partition and an all-zero breakdown even after the grant.
+     */
+    val rootStorageDirectory: File
+        get() = try {
+            val ext = Environment.getExternalStorageDirectory()
+            if (ext != null && ext.exists() && ext.canRead()) ext else context.filesDir
+        } catch (_: Exception) {
+            context.filesDir
+        }
 
     suspend fun getStorageCapacity(): StorageStats = withContext(Dispatchers.IO) {
         val root = rootStorageDirectory
@@ -405,8 +438,15 @@ class FileManagerRepository(private val context: Context) {
                 apkBytes = apks,
                 othersBytes = others
             )
-        } catch (_: Exception) {
-            StorageStats()
+        } catch (e: CancellationException) {
+            throw e
+        } catch (e: Exception) {
+            // Propagate instead of fabricating a zeroed model: the ViewModel
+            // keeps its previous stats on failure, whereas a successful return
+            // of StorageStats() makes the UI read "0 B for every category" -
+            // indistinguishable from a genuinely empty device.
+            e.printStackTrace()
+            throw e
         }
     }
 
@@ -426,18 +466,26 @@ class FileManagerRepository(private val context: Context) {
         directoryCache.evictAll()
     }
 
-    private fun isValidItemName(name: String): Boolean =
+    fun isValidItemName(name: String): Boolean =
         name.isNotEmpty() && name != "." && name != ".." &&
             name.none { it == '/' || it == '\\' || it == '\u0000' }
 
     /**
-     * True when both paths point at the SAME file. Media filesystems are
-     * case-insensitive, so "photo.jpg" and "Photo.jpg" resolve to one file and
-     * a naive exists() check would reject a legitimate case-only rename.
+     * True when both paths point at the SAME file. On a case-insensitive
+     * filesystem "photo.jpg" and "Photo.jpg" resolve to one file and a naive
+     * exists() check would reject a legitimate case-only rename; on Android's
+     * case-SENSITIVE emulated storage they are two different files and the
+     * rename must be rejected instead of silently overwriting one. Ask the
+     * filesystem rather than comparing strings with the wrong case rules.
      */
     private fun isSameFile(a: File, b: File): Boolean =
         try {
-            a.canonicalPath.equals(b.canonicalPath, ignoreCase = true)
+            when {
+                a.exists() && b.exists() ->
+                    java.nio.file.Files.isSameFile(a.toPath(), b.toPath())
+                else ->
+                    a.canonicalPath.equals(b.canonicalPath, ignoreCase = true)
+            }
         } catch (_: Exception) {
             false
         }
@@ -550,18 +598,22 @@ class FileManagerRepository(private val context: Context) {
     }
 
     suspend fun deleteFiles(files: List<File>): Boolean = withContext(Dispatchers.IO) {
-        var allSuccess = true
-        for (file in files) {
+        // A selected child is carried by its selected parent - pruning keeps
+        // the batch from acting on it after the folder is already gone.
+        val pruned = pruneNestedSources(files)
+        for (file in pruned) {
             if (file.isDirectory) {
-                if (!file.deleteRecursively()) allSuccess = false
+                file.deleteRecursively()
             } else {
-                if (!file.delete()) allSuccess = false
+                file.delete()
             }
         }
         // Re-list from disk even after partial failures: the list must never
         // show ghosts, and missing invalidation caused exactly that.
         invalidateDirectoryCache()
-        allSuccess
+        // Success = nothing from the batch is left; a mid-batch failure may
+        // have deleted some items already, and only the remainder decides.
+        pruned.none { it.exists() }
     }
 
     suspend fun copyFiles(sources: List<File>, destinationDir: File): Boolean =
@@ -578,13 +630,14 @@ class FileManagerRepository(private val context: Context) {
         try {
             // Validate the entire batch before mutating anything. Copying a
             // folder into itself (including via an alias) recurses indefinitely.
+            val pruned = pruneNestedSources(sources)
             val destinationPath = destinationDir.canonicalFile.toPath()
-            if (sources.any { source ->
+            if (pruned.any { source ->
                 !source.exists() || (source.isDirectory &&
                     destinationPath.startsWith(source.canonicalFile.toPath()))
             }) return@withContext false
             if (!destinationDir.isDirectory && !destinationDir.mkdirs()) return@withContext false
-            for (src in sources) {
+            for (src in pruned) {
                 // A cut/paste into the same folder is a no-op, not a rename.
                 if (move && src.parentFile?.canonicalFile == destinationDir.canonicalFile) continue
                 val dest = getUniqueDestinationFile(destinationDir, src.name)
@@ -594,13 +647,30 @@ class FileManagerRepository(private val context: Context) {
                     // copyRecursively signals failure by returning false (it
                     // does not throw on a partial copy): deleting the source
                     // after a failed copy would lose the user's data.
+                    val destExisted = dest.exists()
                     val copied = runCatching {
                         src.copyRecursively(dest, overwrite = false)
                     }.getOrDefault(false)
-                    if (!copied) return@withContext false
+                    if (!copied) {
+                        // The half-copied tree we created is garbage: leaving it
+                        // made a failed copy look like a partial success AND made
+                        // the retry land in "name (1)". Only remove it when it
+                        // was not there before us.
+                        if (!destExisted) runCatching { dest.deleteRecursively() }
+                        return@withContext false
+                    }
                     if (move && !src.deleteRecursively()) return@withContext false
                 } else {
-                    src.copyTo(dest, overwrite = false, bufferSize = COPY_BUFFER)
+                    val destExisted = dest.exists()
+                    try {
+                        src.copyTo(dest, overwrite = false, bufferSize = COPY_BUFFER)
+                    } catch (e: Exception) {
+                        // A truncated destination left behind by a mid-copy I/O
+                        // error is indistinguishable from a real file. Same rule:
+                        // delete only what this attempt created.
+                        if (!destExisted) runCatching { dest.delete() }
+                        throw e
+                    }
                     if (move && !src.delete()) return@withContext false
                 }
             }
@@ -841,7 +911,10 @@ class FileManagerRepository(private val context: Context) {
             "rtf" -> "application/rtf"
             // Structured / markup / source code: text editors handle all of these
             "json" -> "application/json"
-            "xml", "html", "htm" -> "text/html"
+            // XML is not HTML: claiming text/html sent .xml documents to HTML
+            // renderers, which mangle markup with their own escaping/quirks mode.
+            "xml" -> "text/xml"
+            "html", "htm" -> "text/html"
             "kt", "kts", "java", "py", "js", "mjs", "ts", "css", "sh", "rs", "go",
             "sql", "yaml", "yml", "toml", "ini", "properties", "gradle", "bat",
             "c", "cpp", "h", "hpp", "cs", "php", "rb", "swift", "dart",
@@ -853,7 +926,7 @@ class FileManagerRepository(private val context: Context) {
             "tar" -> "application/x-tar"
             "gz", "tgz" -> "application/gzip"
             "bz2", "tbz2" -> "application/x-bzip2"
-            "xz" -> "application/x-xz"
+            "xz", "txz" -> "application/x-xz"
             "zst" -> "application/zstd"
             "iso" -> "application/x-iso9660-image"
             // Installers: only plain APKs install via the package installer.
@@ -869,11 +942,17 @@ class FileManagerRepository(private val context: Context) {
         var file = File(parent, originalName)
         if (!file.exists()) return file
 
-        val nameWithoutExt = file.nameWithoutExtension
-        val ext = if (file.extension.isNotEmpty()) ".${file.extension}" else ""
+        // Dotfiles have no "name" in stdlib terms: for ".gitignore"
+        // nameWithoutExtension is "" and extension is "gitignore", so the
+        // counter used to build "_1.gitignore" - the dot (and the hidden
+        // status) silently gone. For dotfiles the counter goes after the
+        // whole name; otherwise before the last extension, as before.
+        val dotfile = originalName.startsWith(".")
+        val base = if (dotfile) originalName else file.nameWithoutExtension
+        val ext = if (!dotfile && file.extension.isNotEmpty()) ".${file.extension}" else ""
         var count = 1
         while (file.exists()) {
-            file = File(parent, "${nameWithoutExt}_$count$ext")
+            file = File(parent, "${base}_$count$ext")
             count++
         }
         return file

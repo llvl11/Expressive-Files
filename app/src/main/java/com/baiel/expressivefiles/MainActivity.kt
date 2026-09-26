@@ -131,6 +131,9 @@ class MainActivity : ComponentActivity() {
 
     override fun onNewIntent(intent: Intent) {
         super.onNewIntent(intent)
+        // Keep getIntent() in sync with the delivery: otherwise a later restart
+        // (or any code reading getIntent()) replays the OLD extras.
+        setIntent(intent)
         // Cold-start deliveries arrive through onCreate; warm-start ones
         // (notification "Show dialog" while the app is in the recents stack)
         // land here because the activity is launched singleTop-style.
@@ -401,6 +404,7 @@ private fun GlobalFileDialogs(viewModel: FileViewModel) {
         }
 
         CreateArchiveDialog(
+            viewModel = viewModel,
             selectedFiles = selectedFiles,
             defaultFormat = settings.defaultArchiveType,
             onDismiss = { viewModel.dismissCreateArchive() },

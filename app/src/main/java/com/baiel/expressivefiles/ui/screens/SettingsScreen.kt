@@ -62,10 +62,10 @@ import com.baiel.expressivefiles.model.AppColorPalette
 import com.baiel.expressivefiles.model.AppLanguage
 import com.baiel.expressivefiles.model.AppThemeMode
 import com.baiel.expressivefiles.model.ViewMode
+import com.baiel.expressivefiles.model.label
 import com.baiel.expressivefiles.ui.components.CREATABLE_ARCHIVE_FORMATS
 import com.baiel.expressivefiles.ui.components.ChunkyIconButton
 import com.baiel.expressivefiles.ui.components.CookieIconContainer
-import com.baiel.expressivefiles.ui.components.label
 import com.baiel.expressivefiles.viewmodel.FileViewModel
 import com.baiel.expressivefiles.ui.theme.ChunkyIconShape
 import com.baiel.expressivefiles.ui.theme.ChunkyTileShape

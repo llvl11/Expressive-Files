@@ -173,6 +173,15 @@ fun StorageAnalysisScreen(
                 color = MaterialTheme.colorScheme.onSurface,
                 modifier = Modifier.padding(start = 4.dp, top = 8.dp)
             )
+            // getStorageStats stops after 2 levels / 1200 files, so the
+            // category numbers are a sample - say so instead of implying a
+            // full accounting of every byte.
+            Text(
+                text = stringResource(R.string.analysis_breakdown_note),
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.padding(start = 4.dp, top = 2.dp, bottom = 4.dp)
+            )
 
             // Category breakdown cards
             storageCategories().forEach { spec ->

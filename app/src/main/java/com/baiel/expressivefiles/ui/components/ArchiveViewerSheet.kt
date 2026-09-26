@@ -18,7 +18,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.Folder
 import androidx.compose.material.icons.rounded.Search
@@ -56,7 +56,7 @@ import com.baiel.expressivefiles.R
 import com.baiel.expressivefiles.archive.ArchiveEngine
 import com.baiel.expressivefiles.model.ArchiveEntryItem
 import com.baiel.expressivefiles.model.FileItem
-import com.baiel.expressivefiles.model.determineFileType
+import com.baiel.expressivefiles.model.archiveEntryFileType
 import com.baiel.expressivefiles.ui.components.fileTypeIcon
 import com.baiel.expressivefiles.ui.theme.ChunkyIconShape
 import com.baiel.expressivefiles.ui.theme.ChunkySheetShape
@@ -289,7 +289,13 @@ fun ArchiveViewerSheet(
                                 modifier = Modifier.fillMaxSize(),
                                 verticalArrangement = Arrangement.spacedBy(6.dp)
                             ) {
-                                items(filteredEntries, key = { it.path }) { entry ->
+                                // Key includes the index: ZIP/TAR containers may
+                                // legally hold two entries with the same name, and
+                                // a path-only key crashes LazyColumn with
+                                // "Key ... was already used" during measure.
+                                itemsIndexed(filteredEntries, key = { index, entry ->
+                                    "$index:${entry.path}"
+                                }) { _, entry ->
                                     Surface(
                                         shape = ChunkyIconShape,
                                         color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f),
@@ -303,13 +309,10 @@ fun ArchiveViewerSheet(
                                         ) {
                                             Icon(
                                                 imageVector = if (entry.isDirectory) Icons.Rounded.Folder
-                                                else fileTypeIcon(
-                                                    determineFileType(
-                                                        entry.name,
-                                                        entry.name.substringAfterLast('.', ""),
-                                                        false
-                                                    )
-                                                ),
+                                                // archiveEntryFileType lowercases the extension: entries
+                                                // bypass FileItem.fromAttrs, so PHOTO.JPG used to miss the
+                                                // lowercase extension sets and render generically.
+                                                else fileTypeIcon(archiveEntryFileType(entry.name, false)),
                                                 contentDescription = null,
                                                 tint = if (entry.isDirectory) FolderColor else MaterialTheme.colorScheme.primary,
                                                 modifier = Modifier.size(20.dp)
@@ -327,8 +330,21 @@ fun ArchiveViewerSheet(
                                                     overflow = TextOverflow.Ellipsis
                                                 )
                                                 if (!entry.isDirectory) {
+                                                    // The "(x compressed)" half is only printed when the
+                                                    // engine actually knows a smaller compressed size - TAR
+                                                    // and 7z report -1 (unknown), which would otherwise read
+                                                    // "12 MB (12 MB compressed)".
+                                                    val compressed = entry.compressedSize
                                                     Text(
-                                                        text = stringResource(R.string.viewer_entry_sizes, formatFileSize(entry.size), formatFileSize(entry.compressedSize)),
+                                                        text = if (compressed in 1 until entry.size) {
+                                                            stringResource(
+                                                                R.string.viewer_entry_sizes,
+                                                                formatFileSize(entry.size),
+                                                                formatFileSize(compressed)
+                                                            )
+                                                        } else {
+                                                            stringResource(R.string.viewer_entry_size, formatFileSize(entry.size))
+                                                        },
                                                         style = MaterialTheme.typography.bodySmall,
                                                         fontSize = 11.sp,
                                                         color = MaterialTheme.colorScheme.onSurfaceVariant

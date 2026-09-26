@@ -1,0 +1,9 @@
+Google Sans Flex, unmodified variable font from Google Fonts.
+Downloaded: 2026-09-06
+Family: https://fonts.google.com/specimen/Google+Sans+Flex
+Manifest: https://fonts.google.com/download/list?family=Google%20Sans%20Flex
+File: GoogleSansFlex-VariableFont_GRAD,ROND,opsz,slnt,wdth,wght.ttf
+Source: https://fonts.gstatic.com/s/googlesansflex/v22/t5t7IQcYNIWbFgDgAAzZ34auoVyXipusfhcat2c.ttf
+SHA-256: C6D53424121196B81DE816B8DACCF200E285DD506DF43766DB3D7E8CDF06EE30
+License: SIL Open Font License 1.1 (see GoogleSansFlex-OFL.txt).
+Copyright and naming metadata are preserved in the unmodified font.

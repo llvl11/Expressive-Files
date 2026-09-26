@@ -50,6 +50,7 @@
         <activity
             android:name="com.baiel.expressivefiles.MainActivity"
             android:exported="true"
+            android:launchMode="singleTop"
             android:theme="@style/Theme.MyApplication"
             android:windowSoftInputMode="adjustResize">
             <intent-filter>

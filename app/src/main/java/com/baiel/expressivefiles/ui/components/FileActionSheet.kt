@@ -43,6 +43,7 @@ import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.sp
 import com.baiel.expressivefiles.R
+import com.baiel.expressivefiles.model.ArchiveType
 import com.baiel.expressivefiles.model.FileItem
 import com.baiel.expressivefiles.model.FileType
 import com.baiel.expressivefiles.ui.theme.ChunkyIconShape
@@ -76,7 +77,14 @@ fun FileActionSheet(
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
     val themedFolderColor = MaterialTheme.colorScheme.primary
     val (icon, color) = getFileIconAndColor(targetItem, themedFolderColor)
-    val isArchive = targetItem.fileType == FileType.ARCHIVE
+    // Extract/Inspect are offered only for formats the engine can actually
+    // READ - same gate as FileViewModel.openFile. .gz/.xz/.iso/.zst are typed
+    // ARCHIVE for the category filter but resolve to ArchiveType.OTHER, which
+    // the inspector cannot list (it falls through to the ZIP reader and
+    // throws) and extraction fails on (tar parse of compressed bytes).
+    val isReadableArchive = targetItem.fileType == FileType.ARCHIVE &&
+        targetItem.archiveType != null &&
+        targetItem.archiveType != ArchiveType.OTHER
 
 
     val sheetOpenFolder = stringResource(R.string.sheet_open_folder)
@@ -101,7 +109,7 @@ fun FileActionSheet(
         if (!targetItem.isDirectory) {
             add(ActionSpec(Icons.Rounded.Apps, sheetOpenExternal, onOpenWithExternalApp))
         }
-        if (isArchive) {
+        if (isReadableArchive) {
             add(ActionSpec(Icons.Rounded.Unarchive, stringResource(R.string.sheet_extract_all), onExtract))
             add(ActionSpec(Icons.Rounded.FolderZip, stringResource(R.string.sheet_inspect), onInspectArchive))
         }

@@ -16,3 +16,15 @@
 local.properties
 .env
 debug.keystore
+
+# Local build/signing scripts (contain keystore credentials - never commit)
+/sign-and-build.ps1
+/build_release.ps1
+
+# Working files and logs
+*.log
+*.flag
+/.idea/
+/inspection_out/
+/*.png
+/*.xml

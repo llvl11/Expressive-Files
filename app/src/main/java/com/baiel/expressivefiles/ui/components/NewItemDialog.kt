@@ -22,6 +22,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableLongStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -72,15 +73,23 @@ fun NewItemDialog(
     val focusRequester = remember { FocusRequester() }
     val keyboardController = LocalSoftwareKeyboardController.current
 
-    // Buffered actions: the first tap on Cancel/Confirm wins and tears the
-    // dialog down immediately; further taps (double-tap, IME Done racing the
-    // tap) are ignored so an action can never fire twice.
-    var actionHandled by remember { mutableStateOf(false) }
+    // Buffered actions: a tap/IME-Done within the window wins and tears the
+    // dialog down; the immediate follower of a double-tap (or Done racing the
+    // tap) is ignored so an action can never fire twice. Unlike a one-shot
+    // latch this cannot deadlock: a confirm the ViewModel REJECTS keeps the
+    // dialog open, and the window below re-arms so Cancel/X/back keep working.
+    var lastActionAt by remember { mutableLongStateOf(0L) }
     fun buffered(action: () -> Unit) {
-        if (!actionHandled) {
-            actionHandled = true
-            action()
-        }
+        val now = android.os.SystemClock.elapsedRealtime()
+        if (now - lastActionAt < 500L) return
+        lastActionAt = now
+        action()
+    }
+    // A confirm the ViewModel REJECTED re-arms the window immediately: the
+    // 500 ms guard exists to eat the second half of a double-tap, not a
+    // deliberate Cancel/X tap right after the error appeared.
+    LaunchedEffect(nameError) {
+        if (nameError != null) lastActionAt = 0L
     }
 
     val title = when (type) {

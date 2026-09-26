@@ -55,7 +55,10 @@ fun HomeBottomActionStrip(
     isSelectionMode: Boolean,
     selectedCount: Int,
     onClearSelected: () -> Unit,
-    onPaste: () -> Unit,
+    // Null hides the clipboard Paste bar entirely: paste targets the visible
+    // directory, and screens without one (the Storage-Analysis drill-down)
+    // would otherwise write into an unrelated Home folder.
+    onPaste: (() -> Unit)?,
     onClearClipboard: () -> Unit,
     onCopySelected: () -> Unit,
     onCutSelected: () -> Unit,
@@ -69,7 +72,7 @@ fun HomeBottomActionStrip(
     Box(modifier = modifier) {
         // Clipboard Paste Bar
         AnimatedVisibility(
-            visible = clipboard != null && !isSelectionMode,
+            visible = clipboard != null && !isSelectionMode && onPaste != null,
             enter = fadeIn() + slideInVertically(initialOffsetY = { it }),
             exit = fadeOut() + slideOutVertically(targetOffsetY = { it }),
             modifier = Modifier
@@ -117,7 +120,7 @@ fun HomeBottomActionStrip(
                         Row(verticalAlignment = Alignment.CenterVertically) {
                             ChunkyIconButton(
                                 icon = Icons.Rounded.ContentPaste,
-                                onClick = onPaste,
+                                onClick = { onPaste?.invoke() },
                                 size = 40.dp,
                                 shape = PillShape,
                                 backgroundColor = MaterialTheme.colorScheme.primary,

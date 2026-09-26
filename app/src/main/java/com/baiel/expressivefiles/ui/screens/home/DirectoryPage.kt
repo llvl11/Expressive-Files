@@ -130,6 +130,10 @@ fun DirectoryPage(
     hazeState: HazeState,
     selectedCategory: FileType?,
     searchQuery: String,
+    // Search mode hides the floating strips the top frost band exists for,
+    // so the band itself is dropped - no blur behind the search field and
+    // one less backdrop capture per frame.
+    isSearchActive: Boolean = false,
     // Quick sort bar: shown as a floating glass segment under the type
     // strip; mode/order are pre-resolved by HomeScreen (per-category when a
     // filter chip is active, else the global listing sort).
@@ -141,6 +145,9 @@ fun DirectoryPage(
     isSelectionMode: Boolean,
     selectedPaths: Set<String>,
     filesDirectory: File?,
+    // Current folder could not be read (probe failed after retries): the empty
+    // listing is an access problem, not an actually empty folder.
+    unreadableFolder: Boolean = false,
     // Height of the floating top bar (status bar + bar) that the page is
     // full-bleed under; the hero card and the floating overlays clear it.
     topChromeHeight: Dp,
@@ -224,6 +231,11 @@ fun DirectoryPage(
             // sort controls to zero height. Tall screens are unaffected.
             val maxChromeHeight =
                 (maxHeight - topChromeHeight - stripGap * 2).coerceAtLeast(0.dp)
+            // The header applies maxChromeHeight via heightIn, but the content
+            // paddings below used the RAW measurement: on a short viewport
+            // (landscape/split-screen) the unclamped value reserved more space
+            // than the header actually occupied and pushed the listing down.
+            val usedChromeHeight = minOf(chromeHeight, maxChromeHeight)
             // Placement-weighted drift: the higher a strip sits, the less of
             // the shared elastic offset it takes (breadcrumb laziest, sort
             // strip follows fully).
@@ -239,30 +251,38 @@ fun DirectoryPage(
                 modifier = Modifier.fillMaxSize()
             ) {
                 val scrollPositions = remember { boundedLruMap<String, Pair<Int, Int>>() }
+                // searchQuery is part of the key: search results are a different
+                // listing than the folder itself. Sharing one scroll slot let a
+                // search open mid-list (the folder's saved offset) and then
+                // OVERWRITE that offset with the results' position, so clearing
+                // the query - or coming back later - restored a wrong row.
                 val scrollKey =
-                    "${viewMode.name}:${directory.absolutePath}:${selectedCategory?.name ?: "ALL"}"
-                // Remount on directory AND category/view changes: rebinding one node
-                // across switches let a stale subtree survive fast interactions and
-                // composite its old rows on top of the fresh listing ("ghost items").
-                // Remounting per key disposes the previous tree outright; scroll
-                // memory still works because positions live in the external LRU map.
+                    "${viewMode.name}:${directory.absolutePath}:${selectedCategory?.name ?: "ALL"}:$searchQuery"
+                // Remount on directory AND category/view/search changes: rebinding
+                // one node across switches let a stale subtree survive fast
+                // interactions and composite its old rows on top of the fresh
+                // listing ("ghost items"). Remounting per key disposes the
+                // previous tree outright; scroll memory still works because
+                // positions live in the external LRU map.
                 key(
                     directory.absolutePath,
                     selectedCategory?.name ?: "ALL",
-                    viewMode.name
+                    viewMode.name,
+                    searchQuery
                 ) {
                     FileListContent(
                         directory = directory,
                         filesDirectory = filesDirectory,
+                        unreadableFolder = unreadableFolder,
                         files = files,
                         isLoading = isLoading,
                         searchQuery = searchQuery,
                         // The same measured height follows both enter and exit,
                         // so rows never jump underneath a still-visible sort bar.
-                        topContentPadding = topChromeHeight + stripGap + chromeHeight + folderGap,
+                        topContentPadding = topChromeHeight + stripGap + usedChromeHeight + folderGap,
                         // Thin loading cue sits just under the strips (not down
                         // at folder level) and lines up with their 12dp insets.
-                        loadingBarTopPadding = topChromeHeight + stripGap + chromeHeight + 8.dp,
+                        loadingBarTopPadding = topChromeHeight + stripGap + usedChromeHeight + 8.dp,
                         viewMode = viewMode,
                         isSelectionMode = isSelectionMode,
                         selectedPaths = selectedPaths,
@@ -288,15 +308,19 @@ fun DirectoryPage(
             // melts over a short 96dp below the bar - the same short melt
             // as the bottom band - so the fade is actually visible in open
             // content instead of ending exactly at the bar's bottom edge
-            // (which read as a sharp-edged frosted bar).
-            HazeFadeBand(
-                hazeState = hazeState,
-                height = topChromeHeight + 96.dp,
-                top = true,
-                modifier = Modifier
-                    .align(Alignment.TopCenter)
-                    .fillMaxWidth()
-            )
+            // (which read as a sharp-edged frosted bar). Skipped while the
+            // search field owns the bar: there are no strips to keep
+            // legible, so the frost is just blur over the search screen.
+            if (!isSearchActive) {
+                HazeFadeBand(
+                    hazeState = hazeState,
+                    height = topChromeHeight + 96.dp,
+                    top = true,
+                    modifier = Modifier
+                        .align(Alignment.TopCenter)
+                        .fillMaxWidth()
+                )
+            }
             HazeFadeBand(
                 hazeState = hazeState,
                 height = 96.dp,
@@ -549,6 +573,7 @@ private fun Modifier.elasticEnterSlide(key: Any?): Modifier {
 private fun FileListContent(
     directory: File,
     filesDirectory: File?,
+    unreadableFolder: Boolean,
     files: List<FileItem>,
     isLoading: Boolean,
     searchQuery: String,
@@ -599,7 +624,7 @@ private fun FileListContent(
             // so it is not torn down and rebuilt, which causes a visible flash and a full
             // relayout of every visible card.
             isLoading && files.isEmpty() -> LoadingView(topContentPadding)
-            files.isEmpty() -> EmptyFolderView(searchQuery.isNotEmpty())
+            files.isEmpty() -> EmptyFolderView(searchQuery.isNotEmpty(), unreadableFolder)
             else -> {
                 when (viewMode) {
                     ViewMode.GRID -> FileGridView(files, isSelectionMode, selectedPaths, scrollPositions, scrollKey, topContentPadding, onFileClick, onFileLongClick)
@@ -648,7 +673,7 @@ private fun LoadingView(topContentPadding: Dp) {
 }
 
 @Composable
-private fun EmptyFolderView(isSearch: Boolean) {
+private fun EmptyFolderView(isSearch: Boolean, isUnreadable: Boolean = false) {
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -669,16 +694,29 @@ private fun EmptyFolderView(isSearch: Boolean) {
             )
         }
         Spacer(modifier = Modifier.height(16.dp))
+        // Access failure outranks search/empty: the folder has content the
+        // app cannot show, so "Folder is empty" would be simply wrong.
         Text(
-            text = stringResource(if (isSearch) R.string.list_no_matches else R.string.list_folder_empty),
+            text = stringResource(
+                when {
+                    isUnreadable -> R.string.list_no_access
+                    isSearch -> R.string.list_no_matches
+                    else -> R.string.list_folder_empty
+                }
+            ),
             style = MaterialTheme.typography.titleMedium,
             fontWeight = FontWeight.Black,
             color = MaterialTheme.colorScheme.onSurface
         )
         Spacer(modifier = Modifier.height(6.dp))
         Text(
-            text = stringResource(if (isSearch) R.string.list_no_matches_hint
-            else R.string.list_empty_hint),
+            text = stringResource(
+                when {
+                    isUnreadable -> R.string.list_no_access_hint
+                    isSearch -> R.string.list_no_matches_hint
+                    else -> R.string.list_empty_hint
+                }
+            ),
             style = MaterialTheme.typography.bodySmall,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
             textAlign = TextAlign.Center

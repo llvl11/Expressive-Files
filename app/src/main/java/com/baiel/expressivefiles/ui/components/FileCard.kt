@@ -67,6 +67,7 @@ import com.baiel.expressivefiles.R
 import com.baiel.expressivefiles.model.ArchiveType
 import com.baiel.expressivefiles.model.FileItem
 import com.baiel.expressivefiles.model.FileType
+import com.baiel.expressivefiles.model.label
 import com.baiel.expressivefiles.ui.theme.ApkColor
 import com.baiel.expressivefiles.ui.theme.Archive7zColor
 import com.baiel.expressivefiles.ui.theme.ArchiveColor
@@ -132,7 +133,10 @@ fun fileTypeIcon(type: FileType): ImageVector = when (type) {
 
 fun formatFileSize(bytes: Long): String {
     if (bytes < 1024) return "$bytes B"
-    val exp = (ln(bytes.toDouble()) / ln(1024.0)).toInt()
+    // exp lands in 1..6 for any Long (index 0..5 into "KMGTPE"); the coerce
+    // keeps the index total if this is ever fed a wider type or an unlucky
+    // floating-point edge.
+    val exp = (ln(bytes.toDouble()) / ln(1024.0)).toInt().coerceIn(1, 6)
     val pre = "KMGTPE"[exp - 1]
     return String.format(Locale.getDefault(), "%.1f %sB", bytes / 1024.0.pow(exp.toDouble()), pre)
 }
@@ -168,8 +172,11 @@ private fun dateFormat(): SimpleDateFormat {
     return current
 }
 
-/** Badge label underlines: TAR_GZ -> TAR.GZ (single source, previously inline in 5 places). */
-val ArchiveType.label: String get() = name.replace('_', '.')
+/**
+ * Badge/pill label for an archive format lives in the model layer
+ * ([com.baiel.expressivefiles.model.label]) so the ViewModel can reuse it for
+ * progress operations.
+ */
 
 /** Formats every archive type that can be produced by this app. */
 val CREATABLE_ARCHIVE_FORMATS = listOf(
@@ -181,7 +188,11 @@ val CREATABLE_ARCHIVE_FORMATS = listOf(
 
 // Single source of truth for which entries load a real thumbnail through Coil.
 private fun thumbnailData(item: FileItem): File? = when (item.fileType) {
-    FileType.IMAGE, FileType.VIDEO, FileType.APK -> item.file // Coil's custom Fetchers handle these
+    FileType.IMAGE, FileType.VIDEO -> item.file // Coil's custom Fetchers handle these
+    // Only a real .apk yields a PackageInfo icon. .xapk/.apks/.aab are zip
+    // containers (also typed APK): handing them to ApkIconFetcher fails the
+    // request, so keep them on the drawable icon instead.
+    FileType.APK -> item.file.takeIf { it.extension.equals("apk", ignoreCase = true) }
     else -> null
 }
 
@@ -194,7 +205,11 @@ private fun thumbnailData(item: FileItem): File? = when (item.fileType) {
 @Composable
 private fun rememberThumbModel(item: FileItem, sizePx: Int): ImageRequest {
     val context = LocalContext.current
-    return remember(item.path, sizePx) {
+    // duration is part of the key: durations arrive AFTER the first render
+    // (startVideoDurationEnrichment fills them in per row), and with only
+    // (path, sizePx) the request was never rebuilt - first-visit videos kept
+    // the 1 s fallback frame instead of the documented half-duration frame.
+    return remember(item.path, sizePx, item.duration) {
         val frameMicros = when {
             item.fileType != FileType.VIDEO -> 0L
             item.duration != null -> item.duration / 2
@@ -420,7 +435,7 @@ fun FileListCard(
                         modifier = Modifier.weight(1f, fill = false)
                     )
 
-                    if (item.fileType == FileType.ARCHIVE && item.archiveType != null) {
+                    if (item.fileType == FileType.ARCHIVE && item.archiveType != null && item.archiveType != ArchiveType.OTHER) {
                         Spacer(modifier = Modifier.width(6.dp))
                         ArchiveBadge(color, item.archiveType.label)
                     }
@@ -562,7 +577,7 @@ fun FileGridCard(
                 Box(modifier = Modifier.align(Alignment.TopEnd)) {
                     SelectionCheckbox(isSelected) { gestures.click() }
                 }
-            } else if (item.fileType == FileType.ARCHIVE && item.archiveType != null) {
+            } else if (item.fileType == FileType.ARCHIVE && item.archiveType != null && item.archiveType != ArchiveType.OTHER) {
                 Box(modifier = Modifier.align(Alignment.TopEnd)) {
                     ArchiveBadge(color, item.archiveType.label)
                 }
@@ -647,7 +662,7 @@ fun FileExpressiveCard(
                     }
                 }
 
-                if (item.fileType == FileType.ARCHIVE && item.archiveType != null) {
+                if (item.fileType == FileType.ARCHIVE && item.archiveType != null && item.archiveType != ArchiveType.OTHER) {
                     Box(
                         modifier = Modifier
                             .align(Alignment.TopEnd)

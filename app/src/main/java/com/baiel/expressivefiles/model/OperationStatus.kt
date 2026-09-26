@@ -14,7 +14,11 @@ data class ArchiveProgress(
     val isIndeterminate: Boolean = false,
     val isComplete: Boolean = false,
     val error: String? = null,
-    val targetFile: File? = null
+    val targetFile: File? = null,
+    // File entries whose target already existed on disk and was therefore
+    // left untouched by extraction (never destroyed user data). Surfaces use
+    // it only at completion to report "N kept".
+    val skippedExisting: Int = 0
 ) {
     val progressFloat: Float
         get() = when {

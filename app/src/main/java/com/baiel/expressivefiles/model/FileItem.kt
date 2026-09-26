@@ -31,13 +31,32 @@ enum class ArchiveType(val extension: String, val canCreate: Boolean) {
                 lower.endsWith(".tar.gz") || lower.endsWith(".tgz") -> TAR_GZ
                 lower.endsWith(".zip") || lower.endsWith(".jar") || lower.endsWith(".cbz") -> ZIP
                 lower.endsWith(".7z") || lower.endsWith(".cb7") -> SEVEN_Z
-                lower.endsWith(".tar") || lower.endsWith(".tar.bz2") || lower.endsWith(".tbz2") || lower.endsWith(".tar.xz") -> TAR
+                lower.endsWith(".tar") || lower.endsWith(".tar.bz2") || lower.endsWith(".tbz2") ||
+                    lower.endsWith(".tar.xz") || lower.endsWith(".txz") -> TAR
                 lower.endsWith(".rar") || lower.endsWith(".cbr") -> RAR
                 else -> OTHER
             }
         }
     }
 }
+
+/**
+ * Badge/pill label for an archive format. Explicit mapping - the old blanket
+ * `name.replace('_', '.')` leaked raw enum names into the UI: SEVEN_Z rendered
+ * as "SEVEN.7Z" on every 7z pill/badge, OTHER as an English "OTHER" badge on
+ * a Russian-localized .gz/.iso card. OTHER is not a format name at all, so it
+ * returns "" and callers skip the badge. Lives in the model layer (not the UI)
+ * so the ViewModel can show the same spelling in progress operations.
+ */
+val ArchiveType.label: String
+    get() = when (this) {
+        ArchiveType.ZIP -> "ZIP"
+        ArchiveType.SEVEN_Z -> "7Z"
+        ArchiveType.TAR -> "TAR"
+        ArchiveType.TAR_GZ -> "TAR.GZ"
+        ArchiveType.RAR -> "RAR"
+        ArchiveType.OTHER -> ""
+    }
 
 // Immutable + stable to the Compose compiler: without this, java.io.File makes
 // every FileItem unstable, so file cards can never skip recomposition and each
@@ -94,7 +113,11 @@ data class FileItem(
     }
 }
 
-private val archiveExtensions = setOf("zip", "7z", "rar", "tar", "gz", "bz2", "xz", "zst", "cbz", "cbr", "cb7", "iso")
+// Kept in sync with ArchiveType.fromFileName: "jar" (a ZIP container the engine
+// already opens) and "tbz2" were typed OTHER, so they never reached the archive
+// viewer or the extract action even though the engine supports them. "txz" was
+// the same gap - the engine decompresses .tar.xz (ArchiveEngine.createTarInputStream).
+private val archiveExtensions = setOf("zip", "7z", "rar", "tar", "gz", "bz2", "xz", "zst", "cbz", "cbr", "cb7", "iso", "jar", "tbz2", "txz")
 private val imageExtensions = setOf("jpg", "jpeg", "png", "webp", "gif", "bmp", "svg", "heic", "avif")
 
 // Single source of truth for every component that treats an entry as video
@@ -123,6 +146,15 @@ fun determineFileType(name: String, extension: String, isDirectory: Boolean): Fi
         else -> FileType.OTHER
     }
 }
+
+/**
+ * Type of an entry INSIDE an archive. Same rules as for real files, but the
+ * extension is lowercased here: archive entries never pass through
+ * [FileItem.fromAttrs] (which lowercases), so "PHOTO.JPG" used to miss every
+ * lowercase extension set and render the generic file icon.
+ */
+fun archiveEntryFileType(name: String, isDirectory: Boolean): FileType =
+    determineFileType(name, name.substringAfterLast('.', "").lowercase(), isDirectory)
 
 data class ArchiveEntryItem(
     val path: String,

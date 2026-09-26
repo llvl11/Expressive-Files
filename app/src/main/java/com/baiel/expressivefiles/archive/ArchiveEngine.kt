@@ -105,7 +105,11 @@ object ArchiveEngine {
                                 name = entry.name.trimEnd('/').substringAfterLast('/'),
                                 isDirectory = entry.isDirectory,
                                 size = entry.size,
-                                compressedSize = entry.size,
+                                // -1 = unknown: commons-compress 1.21 keeps
+                                // SevenZArchiveEntry.compressedSize package-
+                                // private, and reporting size here made every
+                                // row read "12 MB (12 MB compressed)".
+                                compressedSize = -1L,
                                 lastModified = entry.lastModifiedDate?.time ?: 0L,
                                 crc = entry.crcValue
                             )
@@ -122,7 +126,10 @@ object ArchiveEngine {
                                 name = entry.name.trimEnd('/').substringAfterLast('/'),
                                 isDirectory = entry.isDirectory,
                                 size = entry.size,
-                                compressedSize = entry.size,
+                                // TAR stores no per-entry compressed size:
+                                // -1 = unknown, the viewer then prints the plain
+                                // size instead of "(x compressed)".
+                                compressedSize = -1L,
                                 lastModified = entry.lastModifiedDate?.time ?: 0L
                             )
                         )
@@ -140,7 +147,10 @@ object ArchiveEngine {
                                 size = header.unpSize,
                                 compressedSize = header.packSize,
                                 lastModified = header.mTime?.time ?: 0L,
-                                crc = header.fileCRC.toLong()
+                                // RAR's field is an unsigned 32-bit CRC carried
+                                // in an int: plain toLong() sign-extends high
+                                // bit values negative.
+                                crc = header.fileCRC.toLong() and 0xFFFFFFFFL
                             )
                         )
                     }
@@ -148,7 +158,12 @@ object ArchiveEngine {
                 else -> listZipEntries(archiveFile, entries)
             }
         } catch (e: Exception) {
+            // Propagate instead of returning a partial/empty list as success:
+            // ArchiveViewerSheet wraps this call in try/catch and maps a throw
+            // to its error state. Swallowing here showed a corrupt, truncated
+            // or password-protected archive as a plausible "0 entries" listing.
             e.printStackTrace()
+            throw e
         }
 
         entries
@@ -195,20 +210,34 @@ object ArchiveEngine {
         val gate = ProgressGate(onProgress)
         val job = kotlinx.coroutines.currentCoroutineContext()[Job]
         var processedCount = 0
+        var skippedCount = 0
+        val onSkippedExisting: () -> Unit = { skippedCount++ }
 
         try {
             when (archiveType) {
-                ArchiveType.ZIP -> extractZip(archiveFile, targetDir, job) { name ->
-                    processedCount++
-                    gate.emit {
-                        ArchiveProgress(
-                            operation = "Extracting ZIP",
-                            currentFileName = name,
-                            filesProcessed = processedCount,
-                            totalFiles = -1,
-                            targetFile = targetDir
-                        )
-                    }
+                ArchiveType.ZIP -> {
+                    // The central directory knows the entry count up front, so
+                    // report it: with totalFiles = -1 (old behavior) the popup
+                    // and notification stayed indeterminate and never showed
+                    // "n / total" for the most common format, contradicting the
+                    // KDoc above.
+                    var zipTotal = -1
+                    extractZip(archiveFile, targetDir, job,
+                        onTotal = { zipTotal = it },
+                        onSkippedExisting = onSkippedExisting,
+                        onEntryProcessed = { name ->
+                            processedCount++
+                            gate.emit {
+                                ArchiveProgress(
+                                    operation = "Extracting ZIP",
+                                    currentFileName = name,
+                                    filesProcessed = processedCount,
+                                    totalFiles = zipTotal,
+                                    targetFile = targetDir
+                                )
+                            }
+                        }
+                    )
                 }
                 else -> {
                     val op = when (archiveType) {
@@ -220,7 +249,8 @@ object ArchiveEngine {
                     gate.emit {
                         ArchiveProgress(operation = op, isIndeterminate = true, targetFile = targetDir)
                     }
-                    extractSequential(archiveFile, targetDir, archiveType, job) { name ->
+                    extractSequential(archiveFile, targetDir, archiveType, job,
+                        onSkippedExisting = onSkippedExisting) { name ->
                         processedCount++
                         gate.emit {
                             ArchiveProgress(
@@ -241,7 +271,8 @@ object ArchiveEngine {
                     filesProcessed = processedCount,
                     totalFiles = processedCount.coerceAtLeast(1),
                     isComplete = true,
-                    targetFile = targetDir
+                    targetFile = targetDir,
+                    skippedExisting = skippedCount
                 )
             }
             true
@@ -264,11 +295,14 @@ object ArchiveEngine {
         archiveFile: File,
         targetDir: File,
         job: Job?,
+        onTotal: (Int) -> Unit,
+        onSkippedExisting: () -> Unit,
         onEntryProcessed: (String) -> Unit
     ) {
         // Single open: the central directory is parsed once and provides every
         // entry's attributes; no separate counting pass is needed.
         ZipFile(archiveFile).use { zip ->
+            onTotal(zip.size())
             val enumEntries = zip.entries()
             while (enumEntries.hasMoreElements()) {
                 checkAlive(job)
@@ -277,6 +311,11 @@ object ArchiveEngine {
 
                 if (entry.isDirectory) {
                     outFile.mkdirs()
+                } else if (outFile.exists()) {
+                    // Never truncate what is already there: without the
+                    // auto-subfolder guard the target is the archive's own
+                    // folder, and a silent overwrite would destroy user data.
+                    onSkippedExisting()
                 } else {
                     writeStreamToFile({ zip.getInputStream(entry) }, outFile, job)
                 }
@@ -310,6 +349,7 @@ object ArchiveEngine {
         targetDir: File,
         archiveType: ArchiveType,
         job: Job?,
+        onSkippedExisting: () -> Unit,
         onEntryProcessed: (String) -> Unit
     ) {
         when (archiveType) {
@@ -323,6 +363,11 @@ object ArchiveEngine {
                     if (outFile != null) {
                         if (entry.isDirectory) {
                             outFile.mkdirs()
+                        } else if (outFile.exists()) {
+                            // Same never-truncate rule as the ZIP branch; the
+                            // entry stream is consumed on the next read anyway,
+                            // so skipping costs no extra I/O.
+                            onSkippedExisting()
                         } else {
                             outFile.parentFile?.mkdirs()
                             FileOutputStream(outFile).use { rawOut ->
@@ -352,6 +397,8 @@ object ArchiveEngine {
 
                     if (header.isDirectory) {
                         outFile.mkdirs()
+                    } else if (outFile.exists()) {
+                        onSkippedExisting()
                     } else {
                         outFile.parentFile?.mkdirs()
                         FileOutputStream(outFile).use { fos ->
@@ -373,6 +420,8 @@ object ArchiveEngine {
                     if (outFile != null) {
                         if (entry.isDirectory) {
                             outFile.mkdirs()
+                        } else if (outFile.exists()) {
+                            onSkippedExisting()
                         } else {
                             outFile.parentFile?.mkdirs()
                             FileOutputStream(outFile).use { rawOut ->
@@ -406,6 +455,13 @@ object ArchiveEngine {
         format: ArchiveType,
         onProgress: (ArchiveProgress) -> Unit
     ): Boolean = withContext(Dispatchers.IO) {
+        // Refuse to touch a pre-existing archive: every writer below opens the
+        // destination with FileOutputStream/SevenZOutputFile, which TRUNCATES
+        // it to zero bytes, and the failure cleanup at the bottom of this
+        // function deletes whatever is at that path - the user's original data
+        // would be gone even though the operation reported failure/cancel.
+        if (destinationArchive.exists()) return@withContext false
+
         val allFiles = mutableListOf<Pair<File, String>>() // File and relative path
 
         fun collectFiles(file: File, baseRelative: String) {
@@ -424,8 +480,47 @@ object ArchiveEngine {
             }
         }
 
+        // The destination can be part of the selection (user picks backup.zip
+        // and names the new archive "backup"). Never collect it: it would be
+        // opened for reading while the same path is being written.
+        val destinationCanonical = try {
+            destinationArchive.canonicalFile
+        } catch (_: Exception) {
+            destinationArchive.absoluteFile
+        }
         for (src in sourceFiles) {
+            val srcCanonical = try {
+                src.canonicalFile
+            } catch (_: Exception) {
+                src.absoluteFile
+            }
+            if (srcCanonical == destinationCanonical) continue
             collectFiles(src, "")
+        }
+        if (allFiles.isEmpty()) return@withContext false
+
+        // Entry names are only the bare file name for every top-level source,
+        // so selecting the same name from two folders (DCIM/x.jpg + Pictures/
+        // x.jpg) produced two "x.jpg" entries: ZipOutputStream throws
+        // "duplicate entry" and aborts the whole compression, while TAR/7z
+        // accept both and extraction silently keeps only the last. Qualify
+        // collisions with the file's own folder, then with a counter.
+        val usedNames = HashSet<String>()
+        for (i in allFiles.indices) {
+            val (file, relPath) = allFiles[i]
+            if (usedNames.add(relPath)) continue
+            val parentName = file.parentFile?.name.orEmpty()
+            var candidate = if (parentName.isNotEmpty()) "$parentName/$relPath" else relPath
+            var attempt = 2
+            while (!usedNames.add(candidate)) {
+                candidate = if (parentName.isNotEmpty()) {
+                    "$parentName ($attempt)/$relPath"
+                } else {
+                    "$attempt/$relPath"
+                }
+                attempt++
+            }
+            allFiles[i] = file to candidate
         }
 
         val totalCount = allFiles.size.coerceAtLeast(1)
@@ -528,6 +623,8 @@ object ArchiveEngine {
             // prevents ghost entries that fail later with confusing errors.
             // This cleanup MUST run before rethrowing CancellationException,
             // otherwise a canceled compression leaves a corrupt file behind.
+            // Deleting is safe only because the exists() guard at the top
+            // guarantees this run - and nobody else - created the destination.
             runCatching { if (destinationArchive.exists()) destinationArchive.delete() }
             // Cancellation is control flow, never an operation failure.
             if (e is CancellationException) throw e
@@ -565,13 +662,21 @@ object ArchiveEngine {
     private fun createTarInputStream(archiveFile: File): TarArchiveInputStream {
         val rawInput: java.io.InputStream = BufferedInputStream(FileInputStream(archiveFile), BUFFER_SIZE)
         val name = archiveFile.name.lowercase()
-        val stream = when {
-            name.endsWith(".tar.gz") || name.endsWith(".tgz") -> GzipCompressorInputStream(rawInput)
-            name.endsWith(".tar.bz2") || name.endsWith(".tbz2") -> BZip2CompressorInputStream(rawInput)
-            name.endsWith(".tar.xz") || name.endsWith(".txz") -> XZCompressorInputStream(rawInput)
-            else -> rawInput
+        return try {
+            val stream = when {
+                name.endsWith(".tar.gz") || name.endsWith(".tgz") -> GzipCompressorInputStream(rawInput)
+                name.endsWith(".tar.bz2") || name.endsWith(".tbz2") -> BZip2CompressorInputStream(rawInput)
+                name.endsWith(".tar.xz") || name.endsWith(".txz") -> XZCompressorInputStream(rawInput)
+                else -> rawInput
+            }
+            TarArchiveInputStream(stream)
+        } catch (t: Throwable) {
+            // The decompressor constructors read and validate the stream header
+            // and throw on a corrupt archive. The FileInputStream opened above
+            // would otherwise leak one descriptor per failed attempt.
+            runCatching { rawInput.close() }
+            throw t
         }
-        return TarArchiveInputStream(stream)
     }
 
     /**

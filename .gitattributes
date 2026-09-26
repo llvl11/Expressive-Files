@@ -1,0 +1,13 @@
+# Prevent text-mode (CRLF/UTF-8) mangling of binary assets: corrupted
+# launcher webp files in the past (bytes >= 0x80 expanded to UTF-8).
+*.webp binary
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.jks binary
+*.keystore binary
+*.aab binary
+*.apk binary
+*.jar binary
+*.ttf binary
+*.otf binary

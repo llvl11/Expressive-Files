@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Android Studio deploys "profilable" runs without the android:debuggable
+     flag. LeakCanary (injected by the Studio profiler integration) crashes on
+     startup in non-debuggable APKs unless this override is present. Scoped to
+     the debug source-set so release builds are never affected. -->
+<resources />

@@ -28,7 +28,9 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextField
 import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableLongStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -46,40 +48,73 @@ import androidx.compose.ui.unit.sp
 import com.baiel.expressivefiles.R
 import com.baiel.expressivefiles.model.ArchiveType
 import com.baiel.expressivefiles.model.FileItem
+import com.baiel.expressivefiles.model.label
 import com.baiel.expressivefiles.ui.theme.ArchiveZipColor
 import com.baiel.expressivefiles.ui.theme.ChunkyIconShape
 import com.baiel.expressivefiles.ui.theme.ChunkyTileShape
 import com.baiel.expressivefiles.ui.theme.ExpressiveRoundedShape
 import com.baiel.expressivefiles.ui.theme.PillShape
+import com.baiel.expressivefiles.viewmodel.FileViewModel
+import com.baiel.expressivefiles.viewmodel.NameError
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun CreateArchiveDialog(
+    viewModel: FileViewModel,
     selectedFiles: List<FileItem>,
     defaultFormat: ArchiveType,
     onDismiss: () -> Unit,
     onCompress: (name: String, format: ArchiveType) -> Unit
 ) {
     val initialName = if (selectedFiles.size == 1) {
-        selectedFiles.first().name.substringBeforeLast('.') + "_archive"
+        val first = selectedFiles.first()
+        // Only strip a real extension: folders ("v2.1") and dotfiles
+        // (".gitignore") would otherwise be mangled ("v2_archive", "_archive").
+        val dot = if (first.isDirectory) -1 else first.name.lastIndexOf('.')
+        val base = if (dot > 0) first.name.substring(0, dot) else first.name
+        base + "_archive"
     } else {
-        "archive_${System.currentTimeMillis() / 1000}"
+        // The folder the picked files live in - "DCIM_archive" - instead of the
+        // old epoch suffix ("archive_1758879123"), which nobody could read and
+        // everybody had to retype. A collision is not silent: validation below
+        // rejects it and the dialog reports "already exists" inline.
+        val parentName = selectedFiles.firstOrNull()?.file?.parentFile?.name
+            ?.takeIf { it.isNotBlank() && it != "/" }
+        if (parentName != null) "${parentName}_archive" else "archive"
     }
 
+    val nameError by viewModel.nameError.collectAsStateWithLifecycle()
     var archiveName by remember { mutableStateOf(initialName) }
     var selectedFormat by remember {
         mutableStateOf(if (defaultFormat.canCreate) defaultFormat else ArchiveType.ZIP)
     }
 
-    // Buffered actions: the first tap on Cancel/Compress wins and tears the
-    // dialog down immediately (compression continues in the archive popup);
-    // further taps are ignored so an action can never fire twice.
-    var actionHandled by remember { mutableStateOf(false) }
+    // Buffered actions: a tap within the window wins and tears the dialog down
+    // (compression continues in the archive popup); its immediate follower is
+    // ignored so an action can never fire twice. A time window rather than a
+    // one-shot latch, because a rejected name keeps this dialog open and a
+    // permanent latch would swallow Cancel/X/back.
+    var lastActionAt by remember { mutableLongStateOf(0L) }
     fun buffered(action: () -> Unit) {
-        if (!actionHandled) {
-            actionHandled = true
-            action()
-        }
+        val now = android.os.SystemClock.elapsedRealtime()
+        if (now - lastActionAt < 500L) return
+        lastActionAt = now
+        action()
+    }
+    // A name the ViewModel REJECTED re-arms the window immediately: the 500 ms
+    // guard exists to eat the second half of a double-tap, not a deliberate
+    // Cancel/X tap right after the error appeared.
+    LaunchedEffect(nameError) {
+        if (nameError != null) lastActionAt = 0L
+    }
+
+    val nameErrorText = when (nameError) {
+        null -> null
+        NameError.EMPTY -> stringResource(R.string.rename_error_empty)
+        NameError.INVALID -> stringResource(R.string.rename_error_invalid)
+        NameError.EXISTS -> stringResource(R.string.rename_error_exists)
+        NameError.FAILED -> stringResource(R.string.rename_error_failed)
     }
 
     BasicAlertDialog(onDismissRequest = { buffered(onDismiss) }) {
@@ -154,8 +189,14 @@ fun CreateArchiveDialog(
 
                 OutlinedTextField(
                     value = archiveName,
-                    onValueChange = { archiveName = it },
+                    onValueChange = {
+                        archiveName = it
+                        // Any edit invalidates the previous rejection.
+                        if (nameError != null) viewModel.clearNameError()
+                    },
                     singleLine = true,
+                    isError = nameError != null,
+                    supportingText = nameErrorText?.let { { Text(text = it) } },
                     shape = ExpressiveRoundedShape,
                     colors = OutlinedTextFieldDefaults.colors(
                         focusedBorderColor = MaterialTheme.colorScheme.primary,
